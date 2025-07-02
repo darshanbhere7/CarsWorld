@@ -16,6 +16,6 @@ app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/cars", require("./routes/carRoutes"));
 app.use("/api/bookings", require("./routes/bookingRoutes"));
 app.use("/api/imagekit", require("./routes/imagekitRoutes")); // ✅ Corrected here
-
+app.use("/api/reviews", require("./routes/reviewRoutes"));
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚗 Server running on port ${PORT}`));

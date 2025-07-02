@@ -1,6 +1,11 @@
 // controllers/carController.js
 const Car = require("../models/Car");
 
+// Capitalize helper
+function capitalize(str = "") {
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
 // Add a new car (admin only)
 const addCar = async (req, res) => {
   try {
@@ -13,13 +18,17 @@ const addCar = async (req, res) => {
       pricePerDay,
       location,
       image,
+      engine,
+      seats,
+      mileage,
+      color,
+      features,
+      description,
     } = req.body;
 
-    // Normalize values to match enums
     const formattedFuelType = capitalize(fuelType);
     const formattedTransmission = capitalize(transmission);
 
-    // Create new Car
     const newCar = new Car({
       name,
       brand,
@@ -29,6 +38,12 @@ const addCar = async (req, res) => {
       pricePerDay: Number(pricePerDay),
       location,
       image,
+      engine,
+      seats,
+      mileage,
+      color,
+      features,
+      description,
     });
 
     await newCar.save();
@@ -38,11 +53,6 @@ const addCar = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-
-// Helper to capitalize first letter
-function capitalize(str = "") {
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-}
 
 // Get all cars
 const getAllCars = async (req, res) => {
@@ -54,7 +64,7 @@ const getAllCars = async (req, res) => {
   }
 };
 
-// Get a single car by ID
+// Get single car by ID
 const getCarById = async (req, res) => {
   try {
     const car = await Car.findById(req.params.id);
@@ -65,7 +75,7 @@ const getCarById = async (req, res) => {
   }
 };
 
-// Update a car (admin only)
+// Update car
 const updateCar = async (req, res) => {
   try {
     const updatedCar = await Car.findByIdAndUpdate(req.params.id, req.body, {
@@ -77,7 +87,7 @@ const updateCar = async (req, res) => {
   }
 };
 
-// Delete a car (admin only)
+// Delete car
 const deleteCar = async (req, res) => {
   try {
     await Car.findByIdAndDelete(req.params.id);

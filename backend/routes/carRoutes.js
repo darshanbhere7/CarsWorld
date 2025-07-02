@@ -16,7 +16,7 @@ const isAdmin = require("../middlewares/roleMiddleware");
 router.get("/", getAllCars);
 router.get("/:id", getCarById);
 
-// Protected (Admin only)
+// Admin only
 router.post("/", auth, isAdmin, addCar);
 router.put("/:id", auth, isAdmin, updateCar);
 router.delete("/:id", auth, isAdmin, deleteCar);
