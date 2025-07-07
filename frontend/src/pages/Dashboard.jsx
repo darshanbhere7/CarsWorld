@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
+import { socket } from "../lib/utils";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -19,6 +20,11 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchBookings();
+    // Listen for real-time booking updates
+    socket.on("booking_updated", fetchBookings);
+    return () => {
+      socket.off("booking_updated", fetchBookings);
+    };
   }, []);
 
   const handleCancel = async (id) => {

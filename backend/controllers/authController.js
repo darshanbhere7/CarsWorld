@@ -55,4 +55,141 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { register, login };
+// Get current user profile
+const getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.status(200).json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Update user profile (name, email)
+const updateProfile = async (req, res) => {
+  try {
+    const { name, email } = req.body;
+    const user = await User.findByIdAndUpdate(
+      req.user.userId,
+      { name, email },
+      { new: true, runValidators: true, context: 'query' }
+    ).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.status(200).json({ message: "Profile updated", user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Change password
+const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const user = await User.findById(req.user.userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) return res.status(401).json({ message: "Current password is incorrect" });
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+    res.status(200).json({ message: "Password changed successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Admin: Get all users
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find().select("-password");
+    res.status(200).json(users);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Admin: Block a user
+const blockUser = async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(req.params.id, { blocked: true }, { new: true });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.status(200).json({ message: "User blocked", user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Admin: Unblock a user
+const unblockUser = async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(req.params.id, { blocked: false }, { new: true });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.status(200).json({ message: "User unblocked", user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Admin: Promote to admin
+const promoteUser = async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(req.params.id, { role: "admin" }, { new: true });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.status(200).json({ message: "User promoted to admin", user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Admin: Demote to user
+const demoteUser = async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(req.params.id, { role: "user" }, { new: true });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.status(200).json({ message: "User demoted to user", user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Get user's wishlist
+const getWishlist = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).populate("wishlist");
+    res.status(200).json(user.wishlist);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Add car to wishlist
+const addToWishlist = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    const carId = req.body.carId;
+    if (!user.wishlist.includes(carId)) {
+      user.wishlist.push(carId);
+      await user.save();
+    }
+    res.status(200).json({ message: "Car added to wishlist", wishlist: user.wishlist });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Remove car from wishlist
+const removeFromWishlist = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    const carId = req.body.carId;
+    user.wishlist = user.wishlist.filter(id => id.toString() !== carId);
+    await user.save();
+    res.status(200).json({ message: "Car removed from wishlist", wishlist: user.wishlist });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+module.exports = { register, login, getProfile, updateProfile, changePassword, getAllUsers, blockUser, unblockUser, promoteUser, demoteUser, getWishlist, addToWishlist, removeFromWishlist };

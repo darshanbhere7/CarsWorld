@@ -9,6 +9,11 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
+// ✅ Get io instance helper
+function getIO(req) {
+  return req.app.get("io");
+}
+
 // ✅ Create Booking with Date Conflict Check
 const createBooking = async (req, res) => {
   try {
@@ -16,6 +21,7 @@ const createBooking = async (req, res) => {
 
     const car = await Car.findById(carId);
     if (!car) return res.status(404).json({ message: "Car not found" });
+    if (!car.availability) return res.status(400).json({ message: "Car is unavailable for booking" });
 
     const start = new Date(pickupDate);
     const end = new Date(returnDate);
@@ -47,6 +53,10 @@ const createBooking = async (req, res) => {
     });
 
     await booking.save();
+    // Emit car and booking update events
+    const io = getIO(req);
+    io.emit("car_updated", { carId: carId });
+    io.emit("booking_updated", { bookingId: booking._id });
     res.status(201).json({ message: "Booking confirmed!", booking });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -77,6 +87,10 @@ const cancelBooking = async (req, res) => {
 
     booking.status = "Cancelled";
     await booking.save();
+    // Emit car and booking update events
+    const io = getIO(req);
+    io.emit("car_updated", { carId: booking.car });
+    io.emit("booking_updated", { bookingId: booking._id });
     res.status(200).json({ message: "Booking cancelled" });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -101,7 +115,10 @@ const updateBookingStatus = async (req, res) => {
 
     booking.status = req.body.status || booking.status;
     await booking.save();
-
+    // Emit car and booking update events
+    const io = getIO(req);
+    io.emit("car_updated", { carId: booking.car });
+    io.emit("booking_updated", { bookingId: booking._id });
     res.status(200).json({ message: "Booking status updated", booking });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -150,53 +167,68 @@ const getBookingStats = async (req, res) => {
   }
 };
 
-// ✅ INITIATE PAYMENT
+// ✅ INITIATE PAYMENT (Mocked for development)
 const initiatePayment = async (req, res) => {
   try {
     const { amount } = req.body;
-
-    const options = {
-      amount: amount * 100, // in paise
-      currency: "INR",
-      receipt: "receipt_order_" + new Date().getTime(),
-    };
-
-    const order = await razorpay.orders.create(options);
-    res.status(200).json({ orderId: order.id, amount: order.amount, currency: order.currency });
+    // Mock order object for development
+    res.status(200).json({
+      orderId: "order_" + Date.now(),
+      amount: amount * 100,
+      currency: "INR"
+    });
   } catch (err) {
     res.status(500).json({ error: "Failed to initiate payment" });
   }
 };
 
-// ✅ VERIFY PAYMENT
+// ✅ VERIFY PAYMENT (Mocked for development)
 const verifyPayment = async (req, res) => {
   try {
-    const { bookingId, razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
+    const { bookingId } = req.body;
 
-    const generated_signature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-      .digest("hex");
-
-    if (generated_signature !== razorpay_signature) {
-      return res.status(400).json({ message: "Payment verification failed" });
-    }
-
+    // In mock mode, skip signature verification and always succeed
     const booking = await Booking.findById(bookingId);
     if (!booking) return res.status(404).json({ message: "Booking not found" });
 
     booking.isPaid = true;
     booking.paidAt = new Date();
     booking.paymentInfo = {
-      id: razorpay_payment_id,
-      orderId: razorpay_order_id,
-      signature: razorpay_signature,
+      id: "mock_payment_id",
+      orderId: "mock_order_id",
+      signature: "mock_signature",
     };
 
     await booking.save();
     res.status(200).json({ message: "Payment verified & booking updated", booking });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+
+// Check booking conflict for a car and date range
+const checkBookingConflict = async (req, res) => {
+  try {
+    const { carId, pickupDate, returnDate } = req.body;
+    if (!carId || !pickupDate || !returnDate) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+    const conflict = await Booking.findOne({
+      car: carId,
+      status: { $in: ["Booked", "Completed"] },
+      $or: [
+        {
+          pickupDate: { $lte: new Date(returnDate) },
+          returnDate: { $gte: new Date(pickupDate) },
+        },
+      ],
+    });
+    if (conflict) {
+      return res.status(409).json({ message: "Car already booked for selected dates" });
+    }
+    return res.status(200).json({ message: "No conflict" });
+  } catch (err) {
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -210,4 +242,5 @@ module.exports = {
   getBookingStats,
   initiatePayment,
   verifyPayment,
+  checkBookingConflict,
 };

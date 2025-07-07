@@ -14,10 +14,21 @@ const Login = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const validate = () => {
+    if (!form.email) return "Email is required.";
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email)) return "Invalid email format.";
+    if (!form.password) return "Password is required.";
+    return null;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     try {
       const res = await api.post("/auth/login", form);
       login(res.data.user, res.data.token);
@@ -58,7 +69,7 @@ const Login = () => {
         </button>
       </form>
       <p className="mt-4 text-sm">
-        Don’t have an account? <a href="/register" className="text-blue-600">Register</a>
+        Don't have an account? <a href="/register" className="text-blue-600">Register</a>
       </p>
     </div>
   );

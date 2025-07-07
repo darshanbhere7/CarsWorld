@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import api from "../services/api";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
+import { socket } from "../lib/utils";
+import { useAuth } from "../context/AuthContext";
 
 const Cars = () => {
   const [cars, setCars] = useState([]);
@@ -20,12 +22,17 @@ const Cars = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const carsPerPage = 6;
 
+  const { user } = useAuth();
+  const [wishlistIds, setWishlistIds] = useState([]);
+
   useEffect(() => {
     const fetchCars = async () => {
       try {
         const res = await api.get("/cars");
-        setCars(res.data);
-        setFilteredCars(res.data);
+        // Only show available cars
+        const availableCars = res.data.filter(car => car.availability !== false);
+        setCars(availableCars);
+        setFilteredCars(availableCars);
       } catch (err) {
         toast.error("Failed to load cars.");
       }
@@ -60,6 +67,12 @@ const Cars = () => {
 
     fetchCars();
     fetchRatings();
+
+    // Listen for real-time car updates
+    socket.on("car_updated", fetchCars);
+    return () => {
+      socket.off("car_updated", fetchCars);
+    };
   }, []);
 
   useEffect(() => {
@@ -113,6 +126,30 @@ const Cars = () => {
     cars,
     ratingsMap,
   ]);
+
+  useEffect(() => {
+    if (user) fetchWishlistIds();
+  }, [user]);
+
+  const fetchWishlistIds = async () => {
+    try {
+      const res = await api.get("/auth/wishlist");
+      setWishlistIds(res.data.map(car => car._id));
+    } catch {}
+  };
+
+  const handleWishlist = async (carId) => {
+    if (!user) return toast.info("Login to save cars to wishlist");
+    if (wishlistIds.includes(carId)) {
+      await api.post("/auth/wishlist/remove", { carId });
+      setWishlistIds(wishlistIds.filter(id => id !== carId));
+      toast.info("Removed from wishlist");
+    } else {
+      await api.post("/auth/wishlist/add", { carId });
+      setWishlistIds([...wishlistIds, carId]);
+      toast.success("Added to wishlist");
+    }
+  };
 
   const resetFilters = () => {
     setSearch("");
@@ -196,32 +233,47 @@ const Cars = () => {
             const rating = ratingsMap[car._id];
 
             return (
-              <Link to={`/cars/${car._id}`} key={car._id}>
-                <div className="border rounded-lg overflow-hidden bg-white hover:shadow-lg transition">
-                  <img src={car.image} alt={car.name} className="w-full h-48 object-cover" />
-                  <div className="p-4">
-                    <h3 className="font-bold text-lg">{car.name}</h3>
+              <div key={car._id} className="relative">
+                <Link to={`/cars/${car._id}`}>
+                  <div className="border rounded-lg overflow-hidden bg-white hover:shadow-lg transition">
+                    <img src={car.image} alt={car.name} className="w-full h-48 object-cover" />
+                    <div className="p-4">
+                      <h3 className="font-bold text-lg">{car.name}</h3>
 
-                    {rating ? (
-                      <div className="flex items-center gap-1 text-yellow-500 text-sm mb-1">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <span key={i}>
-                            {i < Math.floor(rating.avg) ? "★" : "☆"}
-                          </span>
-                        ))}
-                        <span className="text-gray-600">({rating.count})</span>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-400">No reviews yet</p>
-                    )}
+                      {rating ? (
+                        <div className="flex items-center gap-1 text-yellow-500 text-sm mb-1">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <span key={i}>
+                              {i < Math.floor(rating.avg) ? "★" : "☆"}
+                            </span>
+                          ))}
+                          <span className="text-gray-600">({rating.count})</span>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-400">No reviews yet</p>
+                      )}
 
-                    <p className="text-sm text-gray-500">{car.brand} • {car.modelYear}</p>
-                    <p className="text-sm text-gray-500">{car.fuelType} • {car.transmission}</p>
-                    <p className="text-blue-600 font-semibold mt-2">₹{car.pricePerDay} / day</p>
-                    <p className="text-xs text-gray-500 mt-1">{car.location}</p>
+                      <p className="text-sm text-gray-500">{car.brand} • {car.modelYear}</p>
+                      <p className="text-sm text-gray-500">{car.fuelType} • {car.transmission}</p>
+                      <p className="text-blue-600 font-semibold mt-2">₹{car.pricePerDay} / day</p>
+                      <p className="text-xs text-gray-500 mt-1">{car.location}</p>
+                    </div>
                   </div>
-                </div>
-              </Link>
+                </Link>
+                {/* Heart Button */}
+                {user && (
+                  <button
+                    className="absolute top-2 right-2 text-2xl focus:outline-none"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleWishlist(car._id);
+                    }}
+                    style={{ background: "rgba(255,255,255,0.8)", borderRadius: "50%", padding: 4 }}
+                  >
+                    {wishlistIds.includes(car._id) ? "❤️" : "🤍"}
+                  </button>
+                )}
+              </div>
             );
           })
         )}

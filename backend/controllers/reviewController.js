@@ -36,10 +36,13 @@ const getCarReviews = async (req, res) => {
   }
 };
 
-// ✅ Get all reviews (car + rating only) – for listing page average stars
+// ✅ Get all reviews (full details for admin moderation)
 const getAllReviews = async (req, res) => {
   try {
-    const reviews = await Review.find({}, "car rating");
+    const reviews = await Review.find({})
+      .populate("car", "name")
+      .populate("user", "name email")
+      .select("car user rating comment adminReply");
     res.status(200).json(reviews);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -52,15 +55,34 @@ const deleteReview = async (req, res) => {
     const review = await Review.findById(req.params.id);
     if (!review) return res.status(404).json({ message: "Review not found" });
 
-    const userId = req.user.userId;
-    const isAdmin = req.user.role === "admin";
+    const userId = req.user?.userId;
+    const isAdmin = req.user?.role === "admin";
 
-    if (review.user.toString() !== userId && !isAdmin) {
+    if (!userId && !isAdmin) {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
-    await review.remove();
+    if (review.user.toString() !== String(userId) && !isAdmin) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    await Review.deleteOne({ _id: req.params.id });
     res.status(200).json({ message: "Review deleted" });
+  } catch (err) {
+    console.error("Error deleting review:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Admin reply to review
+const adminReplyToReview = async (req, res) => {
+  try {
+    if (req.user.role !== "admin") return res.status(403).json({ message: "Only admin can reply to reviews" });
+    const review = await Review.findById(req.params.id);
+    if (!review) return res.status(404).json({ message: "Review not found" });
+    review.adminReply = req.body.reply;
+    await review.save();
+    res.status(200).json({ message: "Reply added", review });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -70,5 +92,6 @@ module.exports = {
   addReview,
   getCarReviews,
   deleteReview,
-  getAllReviews, // ✅ export added
+  getAllReviews,
+  adminReplyToReview,
 };

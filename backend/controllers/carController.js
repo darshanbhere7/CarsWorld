@@ -57,7 +57,12 @@ const addCar = async (req, res) => {
 // Get all cars
 const getAllCars = async (req, res) => {
   try {
-    const cars = await Car.find();
+    let cars;
+    if (req.user && req.user.role === "admin") {
+      cars = await Car.find();
+    } else {
+      cars = await Car.find({ availability: true });
+    }
     res.status(200).json(cars);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -97,10 +102,35 @@ const deleteCar = async (req, res) => {
   }
 };
 
+// Admin: Set car availability
+const adminSetAvailability = async (req, res) => {
+  try {
+    const car = await Car.findById(req.params.id);
+    if (!car) return res.status(404).json({ message: "Car not found" });
+    car.availability = req.body.availability;
+    await car.save();
+    res.status(200).json({ message: `Car marked as ${car.availability ? "available" : "unavailable"}`, car });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Admin: Get all cars (no filter)
+const getAllCarsAdmin = async (req, res) => {
+  try {
+    const cars = await Car.find();
+    res.status(200).json(cars);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 module.exports = {
   addCar,
   getAllCars,
   getCarById,
   updateCar,
   deleteCar,
+  adminSetAvailability,
+  getAllCarsAdmin,
 };

@@ -3,6 +3,8 @@ import React, { useEffect, useState } from "react";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { uploadToImageKit } from "../utils/uploadImage";
+import { socket } from "../lib/utils";
+import { addDays, format, isWithinInterval, isSameDay, parseISO } from "date-fns";
 
 const Admin = () => {
   const { user } = useAuth();
@@ -11,6 +13,10 @@ const Admin = () => {
   const [stats, setStats] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editCarId, setEditCarId] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [replyInputs, setReplyInputs] = useState({});
+  const [replyLoading, setReplyLoading] = useState({});
 
   const [form, setForm] = useState({
     name: "",
@@ -36,11 +42,23 @@ const Admin = () => {
       fetchCars();
       fetchBookings();
       fetchStats();
+      fetchUsers();
+      fetchReviews();
+      // Listen for real-time updates
+      socket.on("car_updated", fetchCars);
+      socket.on("booking_updated", () => {
+        fetchBookings();
+        fetchStats();
+      });
+      return () => {
+        socket.off("car_updated", fetchCars);
+        socket.off("booking_updated");
+      };
     }
   }, [user]);
 
   const fetchCars = async () => {
-    const res = await api.get("/cars");
+    const res = await api.get("/cars/admin/all");
     setCars(res.data);
   };
 
@@ -52,6 +70,16 @@ const Admin = () => {
   const fetchStats = async () => {
     const res = await api.get("/bookings/admin/stats");
     setStats(res.data);
+  };
+
+  const fetchUsers = async () => {
+    const res = await api.get("/auth/users");
+    setUsers(res.data);
+  };
+
+  const fetchReviews = async () => {
+    const res = await api.get("/reviews");
+    setReviews(res.data);
   };
 
   const handleChange = (e) => {
@@ -83,8 +111,23 @@ const Admin = () => {
     setMessage("");
   };
 
+  const validateCar = () => {
+    if (!form.name) return "Car name is required.";
+    if (!form.brand) return "Brand is required.";
+    if (!form.modelYear || isNaN(form.modelYear) || form.modelYear < 1900) return "Valid model year is required.";
+    if (!form.location) return "Location is required.";
+    if (!form.pricePerDay || isNaN(form.pricePerDay) || form.pricePerDay <= 0) return "Valid price per day is required.";
+    if (!isEditing && !form.image) return "Car image is required.";
+    return null;
+  };
+
   const handleAddCar = async (e) => {
     e.preventDefault();
+    const validationError = validateCar();
+    if (validationError) {
+      setMessage(validationError);
+      return;
+    }
     setMessage("Uploading image...");
 
     try {
@@ -123,6 +166,11 @@ const Admin = () => {
 
   const handleUpdateCar = async (e) => {
     e.preventDefault();
+    const validationError = validateCar();
+    if (validationError) {
+      setMessage(validationError);
+      return;
+    }
     setMessage("Updating car...");
 
     try {
@@ -163,6 +211,65 @@ const Admin = () => {
     fetchStats();
   };
 
+  const handleBlock = async (id) => {
+    await api.put(`/auth/users/${id}/block`);
+    fetchUsers();
+  };
+
+  const handleUnblock = async (id) => {
+    await api.put(`/auth/users/${id}/unblock`);
+    fetchUsers();
+  };
+
+  const handlePromote = async (id) => {
+    await api.put(`/auth/users/${id}/promote`);
+    fetchUsers();
+  };
+
+  const handleDemote = async (id) => {
+    await api.put(`/auth/users/${id}/demote`);
+    fetchUsers();
+  };
+
+  const handleDeleteReview = async (id) => {
+    await api.delete(`/reviews/${id}`);
+    fetchReviews();
+  };
+
+  const handleReplyChange = (id, value) => {
+    setReplyInputs((prev) => ({ ...prev, [id]: value }));
+  };
+
+  const handleReplySubmit = async (id) => {
+    setReplyLoading((prev) => ({ ...prev, [id]: true }));
+    await api.put(`/reviews/${id}/reply`, { reply: replyInputs[id] });
+    setReplyInputs((prev) => ({ ...prev, [id]: "" }));
+    await fetchReviews();
+    setReplyLoading((prev) => ({ ...prev, [id]: false }));
+  };
+
+  const handleSetAvailability = async (id, availability) => {
+    await api.put(`/cars/${id}/availability`, { availability });
+    fetchCars();
+  };
+
+  // Calendar logic
+  const daysToShow = 14;
+  const today = new Date();
+  const days = Array.from({ length: daysToShow }, (_, i) => addDays(today, i));
+
+  // Helper to get bookings for a car on a specific day
+  const getBookingForCarAndDay = (carId, day) => {
+    return bookings.find(
+      (b) =>
+        b.car?._id === carId &&
+        isWithinInterval(day, {
+          start: parseISO(b.pickupDate),
+          end: parseISO(b.returnDate),
+        })
+    );
+  };
+
   if (!user || user.role !== "admin") {
     return <p className="p-6 text-red-600">Access Denied. Admins only.</p>;
   }
@@ -173,9 +280,9 @@ const Admin = () => {
 
       {/* Stats */}
       {stats && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-4 mb-8">
           <div className="bg-blue-100 p-4 rounded shadow">
-            <h4 className="font-semibold text-blue-800">Today’s Earnings</h4>
+            <h4 className="font-semibold text-blue-800">Today's Earnings</h4>
             <p className="text-2xl font-bold text-blue-900">₹{stats.todayEarnings}</p>
           </div>
           <div className="bg-green-100 p-4 rounded shadow">
@@ -188,6 +295,43 @@ const Admin = () => {
           </div>
         </div>
       )}
+
+      {/* Booking Calendar */}
+      <div className="bg-white p-4 rounded shadow mb-8 overflow-x-auto">
+        <h3 className="font-semibold mb-2">Booking Calendar (next 14 days)</h3>
+        <table className="min-w-full border text-xs">
+          <thead>
+            <tr>
+              <th className="border p-2 bg-gray-100">Car</th>
+              {days.map((d, i) => (
+                <th key={i} className="border p-2 bg-gray-50">{format(d, "MMM d")}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {cars.map((car) => (
+              <tr key={car._id}>
+                <td className="border p-2 font-semibold whitespace-nowrap">{car.name}</td>
+                {days.map((day, i) => {
+                  const booking = getBookingForCarAndDay(car._id, day);
+                  return (
+                    <td key={i} className={`border p-1 text-center ${booking ? (booking.status === "Cancelled" ? "bg-red-100" : booking.status === "Completed" ? "bg-green-100" : "bg-yellow-100") : ""}`}>
+                      {booking ? (
+                        <div>
+                          <span className="block font-bold text-xs">{booking.user?.name || "User"}</span>
+                          <span className="block text-[10px]">{booking.status}</span>
+                          {isSameDay(parseISO(booking.pickupDate), day) && <span className="block text-[10px] text-blue-600">Start</span>}
+                          {isSameDay(parseISO(booking.returnDate), day) && <span className="block text-[10px] text-blue-600">End</span>}
+                        </div>
+                      ) : null}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {/* Add / Update Car Form */}
       <div className="bg-white p-4 rounded shadow">
@@ -256,10 +400,17 @@ const Admin = () => {
               <div>
                 <p>{car.name} - ₹{car.pricePerDay}/day</p>
                 <p className="text-sm text-gray-500">{car.location}</p>
+                <p className="text-xs mt-1">Status: <span className={car.availability ? "text-green-600" : "text-red-600"}>{car.availability ? "Available" : "Unavailable"}</span></p>
               </div>
               <div className="flex gap-4">
                 <button className="text-blue-600" onClick={() => handleEditCar(car)}>Edit</button>
                 <button className="text-red-600" onClick={() => handleDelete(car._id)}>Delete</button>
+                <button
+                  className={car.availability ? "bg-red-500 text-white px-3 py-1 rounded" : "bg-green-500 text-white px-3 py-1 rounded"}
+                  onClick={() => handleSetAvailability(car._id, !car.availability)}
+                >
+                  {car.availability ? "Mark Unavailable" : "Mark Available"}
+                </button>
               </div>
             </div>
           ))}
@@ -286,6 +437,69 @@ const Admin = () => {
                 <option value="Cancelled">Cancelled</option>
                 <option value="Completed">Completed</option>
               </select>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Users List */}
+      <div className="bg-white p-4 rounded shadow">
+        <h3 className="font-semibold mb-2">Manage Users</h3>
+        <div className="space-y-2">
+          {users.map((u) => (
+            <div key={u._id} className="border p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+              <div>
+                <p><strong>{u.name}</strong> ({u.email})</p>
+                <p className="text-sm text-gray-500">Role: {u.role} | Status: {u.blocked ? "Blocked" : "Active"}</p>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                {u.blocked ? (
+                  <button className="bg-green-500 text-white px-3 py-1 rounded" onClick={() => handleUnblock(u._id)}>Unblock</button>
+                ) : (
+                  <button className="bg-red-500 text-white px-3 py-1 rounded" onClick={() => handleBlock(u._id)}>Block</button>
+                )}
+                {u.role === "user" ? (
+                  <button className="bg-blue-500 text-white px-3 py-1 rounded" onClick={() => handlePromote(u._id)}>Promote to Admin</button>
+                ) : (
+                  <button className="bg-gray-500 text-white px-3 py-1 rounded" onClick={() => handleDemote(u._id)}>Demote to User</button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Reviews List */}
+      <div className="bg-white p-4 rounded shadow">
+        <h3 className="font-semibold mb-2">Manage Reviews</h3>
+        <div className="space-y-2">
+          {reviews.map((r) => (
+            <div key={r._id} className="border p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+              <div>
+                <p><strong>Car:</strong> {r.car?.name || r.car}</p>
+                <p><strong>User:</strong> {r.user?.name || r.user} {r.user?.email && <span className="text-xs text-gray-500">({r.user.email})</span>}</p>
+                <p><strong>Rating:</strong> {r.rating} ⭐</p>
+                <p><strong>Comment:</strong> {r.comment}</p>
+                {r.adminReply && (
+                  <p className="text-blue-700"><strong>Admin Reply:</strong> {r.adminReply}</p>
+                )}
+                <div className="flex gap-2 mt-2">
+                  <input
+                    type="text"
+                    placeholder="Write a reply..."
+                    value={replyInputs[r._id] || ""}
+                    onChange={e => handleReplyChange(r._id, e.target.value)}
+                    className="p-1 border rounded"
+                    style={{ minWidth: 180 }}
+                  />
+                  <button
+                    className="bg-blue-500 text-white px-3 py-1 rounded"
+                    onClick={() => handleReplySubmit(r._id)}
+                    disabled={!replyInputs[r._id] || replyLoading[r._id]}
+                  >Reply</button>
+                </div>
+              </div>
+              <button className="bg-red-500 text-white px-3 py-1 rounded" onClick={() => handleDeleteReview(r._id)}>Delete</button>
             </div>
           ))}
         </div>

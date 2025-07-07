@@ -1,13 +1,15 @@
 // pages/CarDetail.jsx
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
+import { socket } from "../lib/utils";
 
 const CarDetail = () => {
   const { id } = useParams();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [car, setCar] = useState(null);
   const [pickupDate, setPickupDate] = useState("");
@@ -20,10 +22,24 @@ const CarDetail = () => {
   const [comment, setComment] = useState("");
   const [userReview, setUserReview] = useState(null);
 
+  const [wishlist, setWishlist] = useState([]);
+
+  const [bookingConflict, setBookingConflict] = useState(null);
+  const [checkingConflict, setCheckingConflict] = useState(false);
+
   useEffect(() => {
     fetchCar();
     fetchReviews();
-  }, [id]);
+    if (user) fetchWishlist();
+    // Listen for real-time car updates
+    const handleCarUpdate = ({ carId }) => {
+      if (carId === id) fetchCar();
+    };
+    socket.on("car_updated", handleCarUpdate);
+    return () => {
+      socket.off("car_updated", handleCarUpdate);
+    };
+  }, [id, user]);
 
   useEffect(() => {
     if (pickupDate && returnDate && car?.pricePerDay) {
@@ -36,7 +52,12 @@ const CarDetail = () => {
         setTotalPrice(null);
       }
     }
-  }, [pickupDate, returnDate, car]);
+    setBookingConflict(null);
+    if (pickupDate && returnDate && car?._id) {
+      checkBookingConflict();
+    }
+    // eslint-disable-next-line
+  }, [pickupDate, returnDate, car?._id]);
 
   const fetchCar = async () => {
     try {
@@ -63,37 +84,64 @@ const CarDetail = () => {
     }
   };
 
-  const handleBooking = async () => {
-    if (!pickupDate || !returnDate) return toast.warn("Select both dates.");
+  const fetchWishlist = async () => {
+    try {
+      const res = await api.get("/auth/wishlist");
+      setWishlist(res.data.map(car => car._id));
+    } catch {}
+  };
+
+  const validateBooking = () => {
+    if (!pickupDate || !returnDate) return "Select both pickup and return dates.";
     const start = new Date(pickupDate);
     const end = new Date(returnDate);
-    if (start >= end) return toast.error("Return date must be after pickup date.");
+    if (start >= end) return "Return date must be after pickup date.";
+    return null;
+  };
 
+  const checkBookingConflict = async () => {
+    setCheckingConflict(true);
+    setBookingConflict(null);
     try {
-      setIsPaying(true);
-
-      // 1. Simulate payment success (dummy)
-      const simulatedPayment = {
-        paymentId: `pay_${Date.now()}`,
-        status: "success",
-      };
-
-      // 2. Create booking after "payment"
-      const res = await api.post("/bookings", {
+      const res = await api.post("/bookings/check-conflict", {
         carId: car._id,
         pickupDate,
         returnDate,
       });
-
-      toast.success("Booking successful!");
+      setBookingConflict(null);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Booking failed");
+      setBookingConflict(err.response?.data?.message || "Conflict check failed");
     } finally {
-      setIsPaying(false);
+      setCheckingConflict(false);
     }
   };
 
+  const handleBooking = () => {
+    const validationError = validateBooking();
+    if (validationError) return toast.error(validationError);
+    if (bookingConflict) return toast.error(bookingConflict);
+    if (!car) return;
+    // Redirect to payment page with booking details
+    navigate("/payment", {
+      state: {
+        carId: car._id,
+        carName: car.name,
+        pickupDate,
+        returnDate,
+        totalPrice,
+      },
+    });
+  };
+
+  const validateReview = () => {
+    if (!rating || rating < 1 || rating > 5) return "Rating must be between 1 and 5.";
+    if (!comment) return "Comment is required.";
+    return null;
+  };
+
   const handleReviewSubmit = async () => {
+    const validationError = validateReview();
+    if (validationError) return toast.error(validationError);
     try {
       await api.post("/reviews", {
         carId: id,
@@ -120,17 +168,51 @@ const CarDetail = () => {
     }
   };
 
+  const handleWishlist = async () => {
+    if (!user) return toast.info("Login to save cars to wishlist");
+    if (wishlist.includes(car._id)) {
+      await api.post("/auth/wishlist/remove", { carId: car._id });
+      setWishlist(wishlist.filter(id => id !== car._id));
+      toast.info("Removed from wishlist");
+    } else {
+      await api.post("/auth/wishlist/add", { carId: car._id });
+      setWishlist([...wishlist, car._id]);
+      toast.success("Added to wishlist");
+    }
+  };
+
   const averageRating = reviews.length
     ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
     : null;
 
   if (!car) return <p className="p-6">Loading...</p>;
+  if (car.availability === false) {
+    return (
+      <div className="p-6 max-w-3xl mx-auto bg-white rounded shadow text-center">
+        <img src={car.image} alt={car.name} className="w-full h-64 object-cover rounded mb-4" />
+        <h2 className="text-3xl font-bold mb-2">{car.name}</h2>
+        <p className="text-red-600 font-semibold text-lg mb-4">This car is currently unavailable for booking.</p>
+        <p className="text-gray-600">Please check back later or browse other cars.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-3xl mx-auto bg-white rounded shadow space-y-6">
       <img src={car.image} alt={car.name} className="w-full h-64 object-cover rounded" />
       <div className="space-y-2">
-        <h2 className="text-3xl font-bold">{car.name}</h2>
+        <h2 className="text-3xl font-bold flex items-center gap-2">
+          {car.name}
+          {user && (
+            <button
+              className="text-2xl focus:outline-none"
+              onClick={handleWishlist}
+              style={{ background: "rgba(255,255,255,0.8)", borderRadius: "50%", padding: 4 }}
+            >
+              {wishlist.includes(car._id) ? "❤️" : "🤍"}
+            </button>
+          )}
+        </h2>
         <p className="text-gray-600">
           {car.brand} • {car.modelYear} • {car.fuelType} • {car.transmission}
         </p>
@@ -191,16 +273,16 @@ const CarDetail = () => {
             className="block mt-1 p-2 border rounded w-full"
           />
         </label>
-
-        {totalPrice && (
+        {checkingConflict && <p className="text-blue-600">Checking availability...</p>}
+        {bookingConflict && <p className="text-red-600">{bookingConflict}</p>}
+        {totalPrice && !bookingConflict && (
           <p className="text-green-700 font-medium">Total Price: ₹{totalPrice}</p>
         )}
-
         {user ? (
           <button
             onClick={handleBooking}
             className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 disabled:opacity-50"
-            disabled={isPaying}
+            disabled={isPaying || !!bookingConflict}
           >
             {isPaying ? "Processing..." : "Pay & Book Now"}
           </button>

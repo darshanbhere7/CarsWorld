@@ -26,6 +26,18 @@ const userSchema = new mongoose.Schema({
     default: "user",
   },
 
+  blocked: {
+    type: Boolean,
+    default: false,
+  },
+
+  wishlist: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Car",
+    },
+  ],
+
   createdAt: {
     type: Date,
     default: Date.now,

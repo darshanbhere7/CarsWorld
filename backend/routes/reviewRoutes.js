@@ -7,6 +7,7 @@ const {
   getCarReviews,
   deleteReview,
   getAllReviews, // ✅ added
+  adminReplyToReview,
 } = require("../controllers/reviewController");
 
 const auth = require("../middlewares/authMiddleware");
@@ -23,5 +24,8 @@ router.get("/", getAllReviews); // keep this **after** `/:carId` to avoid confli
 
 // Delete a review
 router.delete("/:id", auth, deleteReview); // admin or owner only
+
+// Admin reply to review
+router.put("/:id/reply", auth, isAdmin, adminReplyToReview);
 
 module.exports = router;

@@ -17,11 +17,24 @@ const Register = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const validate = () => {
+    if (!form.name) return "Name is required.";
+    if (!form.email) return "Email is required.";
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email)) return "Invalid email format.";
+    if (!form.password) return "Password is required.";
+    if (form.password.length < 6) return "Password must be at least 6 characters.";
+    return null;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setMessage("");
-
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     try {
       const res = await api.post("/auth/register", form);
       setMessage(res.data.message);

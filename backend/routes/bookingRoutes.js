@@ -10,7 +10,8 @@ const {
   updateBookingStatus,
   getBookingStats,
   initiatePayment,     // ✅ New
-  verifyPayment        // ✅ New
+  verifyPayment,        // ✅ New
+  checkBookingConflict
 } = require("../controllers/bookingController");
 
 const auth = require("../middlewares/authMiddleware");
@@ -29,5 +30,8 @@ router.get("/admin/stats", auth, isAdmin, getBookingStats);
 // 💳 Payment Routes
 router.post("/payment/initiate", auth, initiatePayment);
 router.post("/payment/verify", auth, verifyPayment);
+
+// Check booking conflict for a car and date range
+router.post("/check-conflict", checkBookingConflict);
 
 module.exports = router;
