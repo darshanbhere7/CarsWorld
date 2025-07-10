@@ -299,6 +299,12 @@ const CarDetail = () => {
     );
   }
 
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  const minDate = `${yyyy}-${mm}-${dd}`;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-950 via-purple-950 to-gray-900 p-6">
       <div className="max-w-4xl mx-auto space-y-8">
@@ -464,6 +470,7 @@ const CarDetail = () => {
                   type="date"
                   value={pickupDate}
                   onChange={(e) => setPickupDate(e.target.value)}
+                  min={minDate}
                   className="transition-all duration-300 focus:ring-2 focus:ring-blue-500 placeholder:text-blue-300 text-white bg-transparent border-blue-400"
                   placeholder="dd-mm-yyyy"
                 />
@@ -475,6 +482,7 @@ const CarDetail = () => {
                   type="date"
                   value={returnDate}
                   onChange={(e) => setReturnDate(e.target.value)}
+                  min={minDate}
                   className="transition-all duration-300 focus:ring-2 focus:ring-blue-500 placeholder:text-blue-300 text-white bg-transparent border-blue-400"
                   placeholder="dd-mm-yyyy"
                 />

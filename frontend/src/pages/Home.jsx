@@ -28,13 +28,9 @@ import {
   Play,
   Eye
 } from "lucide-react";
-import homebg1 from "../assets/homebg1.jpg";
-import homebg2 from "../assets/homebg2.jpg";
-import homebg3 from "../assets/homebg3.jpg";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 gsap.registerPlugin(ScrollTrigger);
-import realCar from "../assets/realcar.png";
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Stage, useGLTF } from '@react-three/drei';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -100,14 +96,13 @@ const stats = [
 
 function Car3DViewer() {
   const { scene } = useGLTF('/src/assets/car.glb');
-  return <primitive object={scene} scale={1.7} position={[0, -0.7, 0]} />;
+  return <primitive object={scene} scale={3.2} position={[-1.3, -1.2, 0]} />;
 }
 
 const Home = () => {
   const [featuredCars, setFeaturedCars] = useState([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  const heroImages = [homebg1, homebg2, homebg3];
   const [heroIndex, setHeroIndex] = useState(0);
   const heroRef = useRef(null);
   const statsRef = useRef(null);
@@ -134,10 +129,10 @@ const Home = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setHeroIndex((prev) => (prev + 1) % heroImages.length);
+      setHeroIndex((prev) => (prev + 1) % 3); // Changed to 3 as per new_code
     }, 2000); // Faster: 2 seconds
     return () => clearInterval(interval);
-  }, [heroImages.length]);
+  }, []); // Removed heroImages.length from dependency array
 
   // Mock data for when API is not available
   const mockCars = [
@@ -273,18 +268,6 @@ const Home = () => {
       tl.to(ctaSection, { opacity: 1, y: 0 }, "+=0.1");
     }
 
-    // Animate 3D car Canvas from right
-    if (carCanvasRef.current) {
-      gsap.set(carCanvasRef.current, { opacity: 0, x: 200 });
-      gsap.to(carCanvasRef.current, {
-        opacity: 1,
-        x: 0,
-        duration: 1.2,
-        ease: 'power3.out',
-        delay: 0.5
-      });
-    }
-
     // Clean up on unmount
     return () => {
       gsap.killTweensOf([featuredRef.current, featuresSection, testimonialsSection, ctaSection]);
@@ -329,7 +312,7 @@ const Home = () => {
             Experience luxury and convenience with our premium car rental service. From budget-friendly options to luxury vehicles, we have it all.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-start items-center mb-4">
-            <Button asChild size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-none shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 transform hover:scale-105">
+            <Button asChild size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold font-inter border-none shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 transform hover:scale-105">
               <Link to="/cars" className="flex items-center">
                 <Car className="w-5 h-5 mr-2" />
                 Browse Cars
@@ -337,8 +320,11 @@ const Home = () => {
               </Link>
             </Button>
             {!user && (
-              <Button asChild variant="outline" size="lg" className="text-white border-white/50 hover:bg-white/10 backdrop-blur-sm transition-all duration-300">
-                <Link to="/login">Get Started</Link>
+              <Button asChild size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold font-inter border-none shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 transform hover:scale-105">
+                <Link to="/login" className="flex items-center">
+                  <Users className="w-5 h-5 mr-2" />
+                  Get Started
+                </Link>
               </Button>
             )}
           </div>
@@ -590,13 +576,13 @@ const Home = () => {
           </p>
           {!user ? (
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button asChild size="lg" variant="outline" className="text-white border-white/50 hover:bg-white/10 backdrop-blur-sm transition-all duration-300">
+              <Button asChild size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold font-inter border-none shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 transform hover:scale-105">
                 <Link to="/register" className="flex items-center">
                   <Users className="w-5 h-5 mr-2" />
                   Create Account
                 </Link>
               </Button>
-              <Button asChild size="lg" className="bg-white text-blue-600 hover:bg-gray-100 transition-all duration-300 transform hover:scale-105">
+              <Button asChild size="lg" className="bg-white text-blue-700 font-bold font-inter hover:bg-blue-50 border border-blue-200 shadow-lg transition-all duration-300 transform hover:scale-105">
                 <Link to="/login" className="flex items-center">
                   Get Started Now
                   <ArrowRight className="w-5 h-5 ml-2" />
@@ -604,7 +590,7 @@ const Home = () => {
               </Button>
             </div>
           ) : (
-            <Button asChild size="lg" className="bg-white text-blue-600 hover:bg-gray-100 transition-all duration-300 transform hover:scale-105">
+            <Button asChild size="lg" className="bg-white text-blue-600 font-bold font-inter hover:bg-gray-100 transition-all duration-300 transform hover:scale-105">
               <Link to="/cars" className="flex items-center">
                 <Car className="w-5 h-5 mr-2" />
                 Browse Our Cars

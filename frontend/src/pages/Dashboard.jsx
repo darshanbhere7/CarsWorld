@@ -154,7 +154,7 @@ const Dashboard = () => {
     };
 
     return (
-      <Card
+      <Card 
         ref={cardRef}
         className="group border-0 shadow-2xl bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 rounded-2xl hover:shadow-blue-900/40 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] focus-within:scale-[1.01] animate-fade-in"
         style={{ animationDelay: `${index * 0.1}s` }}

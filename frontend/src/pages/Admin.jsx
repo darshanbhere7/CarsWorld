@@ -347,16 +347,16 @@ const Admin = () => {
           </div>
           {selectedCarId ? (
             <div className="overflow-auto z-10 relative max-h-[400px] rounded-3xl border border-blue-800/40">
-              <table className="min-w-full text-xs text-blue-100 font-medium rounded-2xl">
+            <table className="min-w-full text-xs text-blue-100 font-medium rounded-2xl">
                 <thead className="sticky top-0 z-30 bg-blue-900/80">
-                  <tr>
+                <tr>
                     <th className="p-2 text-blue-200 font-semibold text-left bg-blue-900/90 rounded-tl-2xl z-40">Car</th>
-                    {days.map((d, i) => (
+                  {days.map((d, i) => (
                       <th key={i} className="p-2 text-blue-100 font-semibold text-center bg-blue-900/80 z-30">{format(d, "MMM d")}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
                   <tr className="hover:bg-blue-900/40 transition-all">
                     <td className="p-2 font-semibold whitespace-nowrap text-white bg-blue-900/80 border-r border-blue-800/40 rounded-bl-2xl z-20">
                       {cars.find(car => car._id === selectedCarId)?.name}
@@ -377,9 +377,9 @@ const Admin = () => {
                       );
                     })}
                   </tr>
-                </tbody>
-              </table>
-            </div>
+              </tbody>
+            </table>
+          </div>
           ) : (
             <div className="text-blue-300 text-center py-10 font-inter">Select a car to view its booking calendar.</div>
           )}
@@ -548,21 +548,21 @@ const Admin = () => {
                   <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-yellow-900/60 text-yellow-300">{r.rating} ⭐</span>
                 </div>
                 <div className="text-blue-200 text-xs mb-1">{r.comment}</div>
-                {r.adminReply && (
+                  {r.adminReply && (
                   <div className="text-blue-400 text-xs mt-1"><strong>Admin Reply:</strong> {r.adminReply}</div>
-                )}
-                <div className="flex gap-2 mt-2">
-                  <input
-                    type="text"
-                    placeholder="Write a reply..."
-                    value={replyInputs[r._id] || ""}
-                    onChange={e => handleReplyChange(r._id, e.target.value)}
+                  )}
+                  <div className="flex gap-2 mt-2">
+                    <input
+                      type="text"
+                      placeholder="Write a reply..."
+                      value={replyInputs[r._id] || ""}
+                      onChange={e => handleReplyChange(r._id, e.target.value)}
                     className="p-1 rounded-xl bg-gray-800 text-white border-0 focus:ring-2 focus:ring-blue-500 min-w-[120px] flex-1"
-                  />
+                    />
                   <Button
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-xl transition-all duration-300"
-                    onClick={() => handleReplySubmit(r._id)}
-                    disabled={!replyInputs[r._id] || replyLoading[r._id]}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-xl transition-all duration-300"
+                      onClick={() => handleReplySubmit(r._id)}
+                      disabled={!replyInputs[r._id] || replyLoading[r._id]}
                   >Reply</Button>
                   <Button className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-xl transition-all duration-300" onClick={() => handleDeleteReview(r._id)}>Delete</Button>
                 </div>
