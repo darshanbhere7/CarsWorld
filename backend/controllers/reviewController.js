@@ -1,5 +1,6 @@
 // controllers/reviewController.js
 const Review = require("../models/Review");
+const Booking = require("../models/Booking");
 
 // 🔘 Create or update review
 const addReview = async (req, res) => {
@@ -7,8 +8,18 @@ const addReview = async (req, res) => {
     const { carId, rating, comment } = req.body;
     const userId = req.user.userId;
 
-    let review = await Review.findOne({ car: carId, user: userId });
+    // Check for completed booking
+    const completedBooking = await Booking.findOne({
+      car: carId,
+      user: userId,
+      status: "Completed"
+    });
+    if (!completedBooking) {
+      return res.status(403).json({ message: "You can only review a car after completing a booking." });
+    }
 
+    // Prevent multiple reviews for the same car by the same user
+    let review = await Review.findOne({ car: carId, user: userId });
     if (review) {
       review.rating = rating;
       review.comment = comment;
@@ -88,10 +99,22 @@ const adminReplyToReview = async (req, res) => {
   }
 };
 
+// Get all reviews by the logged-in user
+const getUserReviews = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const reviews = await Review.find({ user: userId }).select('car');
+    res.status(200).json(reviews);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 module.exports = {
   addReview,
   getCarReviews,
   deleteReview,
   getAllReviews,
   adminReplyToReview,
+  getUserReviews,
 };

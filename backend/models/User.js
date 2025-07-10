@@ -38,6 +38,11 @@ const userSchema = new mongoose.Schema({
     },
   ],
 
+  avatar: {
+    type: String,
+    default: "", // URL to profile photo
+  },
+
   createdAt: {
     type: Date,
     default: Date.now,

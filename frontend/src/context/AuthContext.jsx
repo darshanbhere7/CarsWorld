@@ -29,6 +29,12 @@ export const AuthProvider = ({ children }) => {
     setToken(jwtToken);
   };
 
+  // Add a function to update user in context and localStorage
+  const updateUser = (userData) => {
+    localStorage.setItem("user", JSON.stringify(userData));
+    setUser(userData);
+  };
+
   // Logout function
   const logout = () => {
     localStorage.removeItem("user");
@@ -38,7 +44,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, token, login, logout, loading, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

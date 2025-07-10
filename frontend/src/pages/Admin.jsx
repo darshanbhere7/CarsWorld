@@ -5,6 +5,10 @@ import { useAuth } from "../context/AuthContext";
 import { uploadToImageKit } from "../utils/uploadImage";
 import { socket } from "../lib/utils";
 import { addDays, format, isWithinInterval, isSameDay, parseISO } from "date-fns";
+import gsap from "gsap";
+import { useRef } from "react";
+import { Button } from '@/components/ui/button';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 const Admin = () => {
   const { user } = useAuth();
@@ -36,6 +40,26 @@ const Admin = () => {
   });
 
   const [message, setMessage] = useState("");
+
+  // Animation refs
+  const headerRef = useRef(null);
+  const statsRef = useRef(null);
+  const calendarRef = useRef(null);
+
+  const [selectedCarId, setSelectedCarId] = useState("");
+  const [calendarDays, setCalendarDays] = useState(15);
+
+  useEffect(() => {
+    if (headerRef.current) {
+      gsap.fromTo(headerRef.current, { opacity: 0, y: -30 }, { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" });
+    }
+    if (statsRef.current) {
+      gsap.fromTo(statsRef.current, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.8, delay: 0.2, ease: "power3.out" });
+    }
+    if (calendarRef.current) {
+      gsap.fromTo(calendarRef.current, { opacity: 0, scale: 0.98 }, { opacity: 1, scale: 1, duration: 0.8, delay: 0.4, ease: "power3.out" });
+    }
+  }, [stats, cars]);
 
   useEffect(() => {
     if (user?.role === "admin") {
@@ -254,9 +278,8 @@ const Admin = () => {
   };
 
   // Calendar logic
-  const daysToShow = 14;
   const today = new Date();
-  const days = Array.from({ length: daysToShow }, (_, i) => addDays(today, i));
+  const days = Array.from({ length: calendarDays }, (_, i) => addDays(today, i));
 
   // Helper to get bookings for a car on a specific day
   const getBookingForCarAndDay = (carId, day) => {
@@ -271,217 +294,262 @@ const Admin = () => {
   };
 
   if (!user || user.role !== "admin") {
-    return <p className="p-6 text-red-600">Access Denied. Admins only.</p>;
+    return <p className="p-6 text-red-400 bg-gradient-to-br from-blue-950 via-purple-950 to-gray-900 rounded-2xl">Access Denied. Admins only.</p>;
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-8">
-      <h2 className="text-2xl font-bold mb-4">Admin Dashboard</h2>
+    <div className="min-h-screen w-full bg-gradient-to-br from-blue-950 via-purple-950 to-gray-900 p-0 flex justify-center items-start">
+      <div className="w-full max-w-6xl mx-auto space-y-10 p-4 md:p-8">
+        <h2 ref={headerRef} className="text-4xl md:text-5xl font-bold font-playfair tracking-wide text-center animate-gradient-text antialiased mb-8 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 drop-shadow-lg">Admin Dashboard</h2>
 
-      {/* Stats */}
-      {stats && (
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="bg-blue-100 p-4 rounded shadow">
-            <h4 className="font-semibold text-blue-800">Today's Earnings</h4>
-            <p className="text-2xl font-bold text-blue-900">₹{stats.todayEarnings}</p>
+        {/* Stats */}
+        {stats && (
+          <div ref={statsRef} className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div className="bg-gradient-to-br from-blue-800/80 via-purple-900/80 to-gray-900/80 p-7 rounded-3xl shadow-2xl border border-blue-600/30 flex flex-col items-center group hover:scale-105 transition-all duration-300 animate-fade-in">
+              <span className="text-5xl font-bold text-blue-400 drop-shadow-lg mb-2 animate-float-gentle">₹{stats.todayEarnings}</span>
+              <span className="text-base font-playfair text-blue-200 tracking-wide">Today's Earnings</span>
+            </div>
+            <div className="bg-gradient-to-br from-green-800/80 via-blue-900/80 to-gray-900/80 p-7 rounded-3xl shadow-2xl border border-green-600/30 flex flex-col items-center group hover:scale-105 transition-all duration-300 animate-fade-in">
+              <span className="text-5xl font-bold text-green-400 drop-shadow-lg mb-2 animate-float-gentle">₹{stats.monthlyEarnings}</span>
+              <span className="text-base font-playfair text-green-200 tracking-wide">Monthly Earnings</span>
+            </div>
+            <div className="bg-gradient-to-br from-yellow-700/80 via-purple-900/80 to-gray-900/80 p-7 rounded-3xl shadow-2xl border border-yellow-400/30 flex flex-col items-center group hover:scale-105 transition-all duration-300 animate-fade-in">
+              <span className="text-5xl font-bold text-yellow-300 drop-shadow-lg mb-2 animate-float-gentle">₹{stats.yearlyEarnings}</span>
+              <span className="text-base font-playfair text-yellow-200 tracking-wide">Yearly Earnings</span>
+            </div>
           </div>
-          <div className="bg-green-100 p-4 rounded shadow">
-            <h4 className="font-semibold text-green-800">Monthly Earnings</h4>
-            <p className="text-2xl font-bold text-green-900">₹{stats.monthlyEarnings}</p>
-          </div>
-          <div className="bg-yellow-100 p-4 rounded shadow">
-            <h4 className="font-semibold text-yellow-800">Yearly Earnings</h4>
-            <p className="text-2xl font-bold text-yellow-900">₹{stats.yearlyEarnings}</p>
-          </div>
-        </div>
-      )}
+        )}
 
-      {/* Booking Calendar */}
-      <div className="bg-white p-4 rounded shadow mb-8 overflow-x-auto">
-        <h3 className="font-semibold mb-2">Booking Calendar (next 14 days)</h3>
-        <table className="min-w-full border text-xs">
-          <thead>
-            <tr>
-              <th className="border p-2 bg-gray-100">Car</th>
-              {days.map((d, i) => (
-                <th key={i} className="border p-2 bg-gray-50">{format(d, "MMM d")}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {cars.map((car) => (
-              <tr key={car._id}>
-                <td className="border p-2 font-semibold whitespace-nowrap">{car.name}</td>
-                {days.map((day, i) => {
-                  const booking = getBookingForCarAndDay(car._id, day);
-                  return (
-                    <td key={i} className={`border p-1 text-center ${booking ? (booking.status === "Cancelled" ? "bg-red-100" : booking.status === "Completed" ? "bg-green-100" : "bg-yellow-100") : ""}`}>
-                      {booking ? (
-                        <div>
-                          <span className="block font-bold text-xs">{booking.user?.name || "User"}</span>
-                          <span className="block text-[10px]">{booking.status}</span>
-                          {isSameDay(parseISO(booking.pickupDate), day) && <span className="block text-[10px] text-blue-600">Start</span>}
-                          {isSameDay(parseISO(booking.returnDate), day) && <span className="block text-[10px] text-blue-600">End</span>}
-                        </div>
-                      ) : null}
+        {/* Booking Calendar */}
+        <div ref={calendarRef} className="relative bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 p-8 rounded-3xl shadow-2xl mb-10 border border-blue-800/40 animate-fade-in">
+          <div className="absolute inset-0 pointer-events-none rounded-3xl animate-gradient-x bg-gradient-to-r from-blue-800/20 via-purple-800/20 to-transparent" style={{zIndex:1}} />
+          <h3 className="font-bold font-playfair tracking-wide mb-4 text-white z-10 relative antialiased text-2xl">Booking Calendar <span className="text-base font-inter text-blue-200">(select a car to view bookings)</span></h3>
+          <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6 z-10 relative">
+            <Select onValueChange={(value) => setSelectedCarId(value)} value={selectedCarId}>
+              <SelectTrigger className="bg-blue-900/80 text-white rounded-xl p-2 font-inter border border-blue-700 focus:ring-2 focus:ring-blue-400 outline-none min-w-[200px]">
+                <SelectValue placeholder="Select Car" />
+              </SelectTrigger>
+              <SelectContent>
+                {cars.map(car => (
+                  <SelectItem key={car._id} value={car._id}>{car.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select onValueChange={(value) => setCalendarDays(Number(value))} value={calendarDays.toString()}>
+              <SelectTrigger className="bg-blue-900/80 text-white rounded-xl p-2 font-inter border border-blue-700 focus:ring-2 focus:ring-blue-400 outline-none min-w-[120px]">
+                <SelectValue placeholder="Next 15 days" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="15">Next 15 days</SelectItem>
+                <SelectItem value="30">Next 30 days</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {selectedCarId ? (
+            <div className="overflow-auto z-10 relative max-h-[400px] rounded-3xl border border-blue-800/40">
+              <table className="min-w-full text-xs text-blue-100 font-medium rounded-2xl">
+                <thead className="sticky top-0 z-30 bg-blue-900/80">
+                  <tr>
+                    <th className="p-2 text-blue-200 font-semibold text-left bg-blue-900/90 rounded-tl-2xl z-40">Car</th>
+                    {days.map((d, i) => (
+                      <th key={i} className="p-2 text-blue-100 font-semibold text-center bg-blue-900/80 z-30">{format(d, "MMM d")}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="hover:bg-blue-900/40 transition-all">
+                    <td className="p-2 font-semibold whitespace-nowrap text-white bg-blue-900/80 border-r border-blue-800/40 rounded-bl-2xl z-20">
+                      {cars.find(car => car._id === selectedCarId)?.name}
                     </td>
-                  );
-                })}
-              </tr>
+                    {days.map((day, i) => {
+                      const booking = getBookingForCarAndDay(selectedCarId, day);
+                      return (
+                        <td key={i} className={`p-1 text-center min-w-[70px] transition-all duration-200 ${booking ? (booking.status === "Cancelled" ? "bg-red-900/60 text-red-300" : booking.status === "Completed" ? "bg-green-900/60 text-green-300" : "bg-yellow-900/60 text-yellow-200") : "hover:bg-blue-900/30"}`} style={{border: '1px solid rgba(59,130,246,0.08)'}}>
+                          {booking ? (
+                            <div className="flex flex-col items-center gap-0.5">
+                              <span className="block font-bold text-xs text-white bg-gradient-to-r from-blue-700/60 to-purple-700/60 px-2 py-0.5 rounded-full shadow-sm mb-0.5">{booking.user?.name || "User"}</span>
+                              <span className={`block text-[10px] font-semibold px-2 py-0.5 rounded-full ${booking.status === "Completed" ? "bg-green-900/60 text-green-300" : booking.status === "Cancelled" ? "bg-red-900/60 text-red-300" : "bg-yellow-900/60 text-yellow-200"}`}>{booking.status}</span>
+                              {isSameDay(parseISO(booking.pickupDate), day) && <span className="block text-[10px] text-blue-400 font-bold">Start</span>}
+                              {isSameDay(parseISO(booking.returnDate), day) && <span className="block text-[10px] text-blue-400 font-bold">End</span>}
+                            </div>
+                          ) : null}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-blue-300 text-center py-10 font-inter">Select a car to view its booking calendar.</div>
+          )}
+        </div>
+
+        {/* Add / Update Car Form */}
+        <div className="bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 p-6 rounded-2xl shadow-2xl animate-fade-in">
+          <h3 className="font-bold font-playfair tracking-wide mb-2 text-white antialiased">{isEditing ? "Update Car" : "Add New Car"}</h3>
+          {message && <p className="text-blue-400 mb-2">{message}</p>}
+
+          <form onSubmit={isEditing ? handleUpdateCar : handleAddCar} className="grid grid-cols-2 gap-4 mt-2">
+            <input name="name" placeholder="Car Name" value={form.name} onChange={handleChange} required className="bg-gray-900/60 text-white placeholder:text-blue-200 rounded-xl p-2" />
+            <input name="brand" placeholder="Brand" value={form.brand} onChange={handleChange} required className="bg-gray-900/60 text-white placeholder:text-blue-200 rounded-xl p-2" />
+            <input name="modelYear" type="number" placeholder="Model Year" value={form.modelYear} onChange={handleChange} required className="bg-gray-900/60 text-white placeholder:text-blue-200 rounded-xl p-2" />
+            <select name="fuelType" value={form.fuelType} onChange={handleChange} className="bg-gray-900/60 text-white rounded-xl p-2">
+              <option value="Petrol">Petrol</option>
+              <option value="Diesel">Diesel</option>
+              <option value="Electric">Electric</option>
+              <option value="Hybrid">Hybrid</option>
+            </select>
+            <select name="transmission" value={form.transmission} onChange={handleChange} className="bg-gray-900/60 text-white rounded-xl p-2">
+              <option value="Manual">Manual</option>
+              <option value="Automatic">Automatic</option>
+            </select>
+            <input name="engine" placeholder="Engine" value={form.engine} onChange={handleChange} className="bg-gray-900/60 text-white placeholder:text-blue-200 rounded-xl p-2" />
+            <input name="seats" type="number" placeholder="Seats" value={form.seats} onChange={handleChange} className="bg-gray-900/60 text-white placeholder:text-blue-200 rounded-xl p-2" />
+            <input name="mileage" placeholder="Mileage" value={form.mileage} onChange={handleChange} className="bg-gray-900/60 text-white placeholder:text-blue-200 rounded-xl p-2" />
+            <input name="color" placeholder="Color" value={form.color} onChange={handleChange} className="bg-gray-900/60 text-white placeholder:text-blue-200 rounded-xl p-2" />
+            <input name="features" placeholder="Features (comma separated)" value={form.features} onChange={handleChange} className="bg-gray-900/60 text-white placeholder:text-blue-200 rounded-xl p-2" />
+            <input name="description" placeholder="Description" value={form.description} onChange={handleChange} className="bg-gray-900/60 text-white placeholder:text-blue-200 rounded-xl p-2" />
+            <input name="location" placeholder="Location" value={form.location} onChange={handleChange} required className="bg-gray-900/60 text-white placeholder:text-blue-200 rounded-xl p-2" />
+            <input name="pricePerDay" type="number" placeholder="Price Per Day" value={form.pricePerDay} onChange={handleChange} required className="bg-gray-900/60 text-white placeholder:text-blue-200 rounded-xl p-2" />
+
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setForm({ ...form, image: e.target.files[0] })}
+              {...(!isEditing && { required: true })}
+              className="col-span-2 bg-gray-900/60 text-white rounded-xl p-2"
+            />
+
+            {form.image && typeof form.image === "object" && (
+              <img src={URL.createObjectURL(form.image)} alt="Preview" className="col-span-2 h-40 object-cover rounded-xl" />
+            )}
+
+            <Button type="submit" className="col-span-2 bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition-all duration-300 hover:scale-105">
+              {isEditing ? "Update Car" : "Add Car"}
+            </Button>
+
+            {isEditing && (
+              <Button type="button" onClick={resetForm} className="col-span-2 bg-gray-600 text-white py-2 rounded-xl hover:bg-gray-700 transition-all duration-300 hover:scale-105">
+                Cancel Edit
+              </Button>
+            )}
+          </form>
+        </div>
+
+        {/* Car List */}
+        <div className="bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 p-6 rounded-2xl shadow-2xl animate-fade-in">
+          <h3 className="text-2xl font-bold font-playfair tracking-wide mb-4 text-white antialiased">Manage Cars</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {cars.map((car) => (
+              <div key={car._id} className="relative group rounded-2xl bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 shadow-xl p-4 flex flex-col gap-2 hover:scale-[1.03] transition-all duration-300 border border-blue-800/40 animate-fade-in">
+                {car.image && (
+                  <img src={car.image} alt={car.name} className="w-full h-32 object-cover rounded-xl mb-2 border border-blue-800/30 shadow" />
+                )}
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-bold text-lg font-playfair text-white antialiased">{car.name}</span>
+                    <span className="text-blue-300 font-bold text-base">₹{car.pricePerDay}/day</span>
+                  </div>
+                  <div className="text-sm text-blue-200 mb-1">{car.location}</div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${car.availability ? 'bg-green-900/60 text-green-300' : 'bg-red-900/60 text-red-300'}`}>{car.availability ? 'Available' : 'Unavailable'}</span>
+                    <span className="text-xs text-blue-200">{car.brand} • {car.modelYear}</span>
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-2">
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-xl font-inter text-sm shadow transition-all duration-200" onClick={() => handleEditCar(car)}>Edit</Button>
+                  <Button className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-xl font-inter text-sm shadow transition-all duration-200" onClick={() => handleDelete(car._id)}>Delete</Button>
+                  <Button
+                    className={car.availability ? "bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded-xl font-inter text-sm shadow transition-all duration-200" : "bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-xl font-inter text-sm shadow transition-all duration-200"}
+                    onClick={() => handleSetAvailability(car._id, !car.availability)}
+                  >
+                    {car.availability ? "Mark Unavailable" : "Mark Available"}
+                  </Button>
+                </div>
+              </div>
             ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Add / Update Car Form */}
-      <div className="bg-white p-4 rounded shadow">
-        <h3 className="font-semibold mb-2">{isEditing ? "Update Car" : "Add New Car"}</h3>
-        {message && <p className="text-blue-600 mb-2">{message}</p>}
-
-        <form onSubmit={isEditing ? handleUpdateCar : handleAddCar} className="grid grid-cols-2 gap-4 mt-2">
-          <input name="name" placeholder="Car Name" value={form.name} onChange={handleChange} required />
-          <input name="brand" placeholder="Brand" value={form.brand} onChange={handleChange} required />
-          <input name="modelYear" type="number" placeholder="Model Year" value={form.modelYear} onChange={handleChange} required />
-          <select name="fuelType" value={form.fuelType} onChange={handleChange}>
-            <option value="Petrol">Petrol</option>
-            <option value="Diesel">Diesel</option>
-            <option value="Electric">Electric</option>
-            <option value="Hybrid">Hybrid</option>
-          </select>
-          <select name="transmission" value={form.transmission} onChange={handleChange}>
-            <option value="Manual">Manual</option>
-            <option value="Automatic">Automatic</option>
-          </select>
-          <input name="engine" placeholder="Engine" value={form.engine} onChange={handleChange} />
-          <input name="seats" type="number" placeholder="Seats" value={form.seats} onChange={handleChange} />
-          <input name="mileage" placeholder="Mileage" value={form.mileage} onChange={handleChange} />
-          <input name="color" placeholder="Color" value={form.color} onChange={handleChange} />
-          <input name="features" placeholder="Features (comma separated)" value={form.features} onChange={handleChange} />
-          <input name="description" placeholder="Description" value={form.description} onChange={handleChange} />
-          <input name="location" placeholder="Location" value={form.location} onChange={handleChange} required />
-          <input name="pricePerDay" type="number" placeholder="Price Per Day" value={form.pricePerDay} onChange={handleChange} required />
-
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setForm({ ...form, image: e.target.files[0] })}
-            {...(!isEditing && { required: true })}
-          />
-
-          {form.image && typeof form.image === "object" && (
-            <img src={URL.createObjectURL(form.image)} alt="Preview" className="col-span-2 h-40 object-cover rounded" />
-          )}
-
-          <button
-            type="submit"
-            className="col-span-2 bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
-          >
-            {isEditing ? "Update Car" : "Add Car"}
-          </button>
-
-          {isEditing && (
-            <button
-              type="button"
-              onClick={resetForm}
-              className="col-span-2 bg-gray-400 text-white py-2 rounded hover:bg-gray-600"
-            >
-              Cancel Edit
-            </button>
-          )}
-        </form>
-      </div>
-
-      {/* Car List */}
-      <div className="bg-white p-4 rounded shadow">
-        <h3 className="font-semibold mb-2">Manage Cars</h3>
-        <div className="space-y-2">
-          {cars.map((car) => (
-            <div key={car._id} className="border p-3 flex justify-between items-center">
-              <div>
-                <p>{car.name} - ₹{car.pricePerDay}/day</p>
-                <p className="text-sm text-gray-500">{car.location}</p>
-                <p className="text-xs mt-1">Status: <span className={car.availability ? "text-green-600" : "text-red-600"}>{car.availability ? "Available" : "Unavailable"}</span></p>
-              </div>
-              <div className="flex gap-4">
-                <button className="text-blue-600" onClick={() => handleEditCar(car)}>Edit</button>
-                <button className="text-red-600" onClick={() => handleDelete(car._id)}>Delete</button>
-                <button
-                  className={car.availability ? "bg-red-500 text-white px-3 py-1 rounded" : "bg-green-500 text-white px-3 py-1 rounded"}
-                  onClick={() => handleSetAvailability(car._id, !car.availability)}
-                >
-                  {car.availability ? "Mark Unavailable" : "Mark Available"}
-                </button>
-              </div>
-            </div>
-          ))}
+          </div>
         </div>
-      </div>
 
-      {/* Booking List */}
-      <div className="bg-white p-4 rounded shadow">
-        <h3 className="font-semibold mb-2">Manage Bookings</h3>
-        <div className="space-y-2">
-          {bookings.map((booking) => (
-            <div key={booking._id} className="border p-3">
-              <p><strong>User:</strong> {booking.user?.name} ({booking.user?.email})</p>
-              <p><strong>Car:</strong> {booking.car?.name}</p>
-              <p><strong>From:</strong> {new Date(booking.pickupDate).toLocaleDateString()}</p>
-              <p><strong>To:</strong> {new Date(booking.returnDate).toLocaleDateString()}</p>
-              <p><strong>Status:</strong> {booking.status}</p>
-              <select
-                value={booking.status}
-                onChange={(e) => handleStatusChange(booking._id, e.target.value)}
-                className="mt-1 p-2 border rounded"
-              >
-                <option value="Booked">Booked</option>
-                <option value="Cancelled">Cancelled</option>
-                <option value="Completed">Completed</option>
-              </select>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Users List */}
-      <div className="bg-white p-4 rounded shadow">
-        <h3 className="font-semibold mb-2">Manage Users</h3>
-        <div className="space-y-2">
-          {users.map((u) => (
-            <div key={u._id} className="border p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-              <div>
-                <p><strong>{u.name}</strong> ({u.email})</p>
-                <p className="text-sm text-gray-500">Role: {u.role} | Status: {u.blocked ? "Blocked" : "Active"}</p>
+        {/* Booking List */}
+        <div className="bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 p-6 rounded-2xl shadow-2xl animate-fade-in">
+          <h3 className="text-2xl font-bold font-playfair tracking-wide mb-4 text-white antialiased">Manage Bookings</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {bookings.map((booking) => (
+              <div key={booking._id} className="relative group rounded-2xl bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 shadow-xl p-4 flex flex-col gap-2 hover:scale-[1.03] transition-all duration-300 border border-blue-800/40 animate-fade-in">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-bold text-blue-200">{booking.user?.name}</span>
+                  <span className="text-xs text-blue-400">({booking.user?.email})</span>
+                </div>
+                <div className="font-bold text-white mb-1">{booking.car?.name}</div>
+                <div className="text-xs text-blue-200 mb-1">{new Date(booking.pickupDate).toLocaleDateString()} → {new Date(booking.returnDate).toLocaleDateString()}</div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${booking.status === 'Completed' ? 'bg-green-900/60 text-green-300' : booking.status === 'Cancelled' ? 'bg-red-900/60 text-red-300' : 'bg-yellow-900/60 text-yellow-200'}`}>{booking.status}</span>
+                </div>
+                <Select value={booking.status} onValueChange={(value) => handleStatusChange(booking._id, value)}>
+                  <SelectTrigger className="bg-gray-800 text-white rounded-xl p-2 border-0 focus:ring-2 focus:ring-blue-500 mt-auto">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Booked">Booked</SelectItem>
+                    <SelectItem value="Cancelled">Cancelled</SelectItem>
+                    <SelectItem value="Completed">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="flex gap-2 flex-wrap">
-                {u.blocked ? (
-                  <button className="bg-green-500 text-white px-3 py-1 rounded" onClick={() => handleUnblock(u._id)}>Unblock</button>
-                ) : (
-                  <button className="bg-red-500 text-white px-3 py-1 rounded" onClick={() => handleBlock(u._id)}>Block</button>
-                )}
-                {u.role === "user" ? (
-                  <button className="bg-blue-500 text-white px-3 py-1 rounded" onClick={() => handlePromote(u._id)}>Promote to Admin</button>
-                ) : (
-                  <button className="bg-gray-500 text-white px-3 py-1 rounded" onClick={() => handleDemote(u._id)}>Demote to User</button>
-                )}
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* Reviews List */}
-      <div className="bg-white p-4 rounded shadow">
-        <h3 className="font-semibold mb-2">Manage Reviews</h3>
-        <div className="space-y-2">
-          {reviews.map((r) => (
-            <div key={r._id} className="border p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-              <div>
-                <p><strong>Car:</strong> {r.car?.name || r.car}</p>
-                <p><strong>User:</strong> {r.user?.name || r.user} {r.user?.email && <span className="text-xs text-gray-500">({r.user.email})</span>}</p>
-                <p><strong>Rating:</strong> {r.rating} ⭐</p>
-                <p><strong>Comment:</strong> {r.comment}</p>
+        {/* Users List */}
+        <div className="bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 p-6 rounded-2xl shadow-2xl animate-fade-in">
+          <h3 className="text-2xl font-bold font-playfair tracking-wide mb-4 text-white antialiased">Manage Users</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {users.map((u) => (
+              <div key={u._id} className="relative group rounded-2xl bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 shadow-xl p-4 flex flex-col gap-2 hover:scale-[1.03] transition-all duration-300 border border-blue-800/40 animate-fade-in">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-bold text-blue-200 text-lg">{u.name}</span>
+                  <span className="text-xs text-blue-400">({u.email})</span>
+                </div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${u.role === 'admin' ? 'bg-yellow-900/60 text-yellow-300' : 'bg-blue-900/60 text-blue-200'}`}>{u.role}</span>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${u.blocked ? 'bg-red-900/60 text-red-300' : 'bg-green-900/60 text-green-300'}`}>{u.blocked ? 'Blocked' : 'Active'}</span>
+                </div>
+                <div className="flex gap-2 flex-wrap mt-auto">
+                  {u.blocked ? (
+                    <Button className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-xl transition-all duration-300" onClick={() => handleUnblock(u._id)}>Unblock</Button>
+                  ) : (
+                    <Button className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-xl transition-all duration-300" onClick={() => handleBlock(u._id)}>Block</Button>
+                  )}
+                  {u.role === "user" ? (
+                    <Button className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-xl transition-all duration-300" onClick={() => handlePromote(u._id)}>Promote to Admin</Button>
+                  ) : (
+                    <Button className="bg-gray-700 hover:bg-gray-800 text-white px-3 py-1 rounded-xl transition-all duration-300" onClick={() => handleDemote(u._id)}>Demote to User</Button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Reviews List */}
+        <div className="bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 p-6 rounded-2xl shadow-2xl animate-fade-in">
+          <h3 className="text-2xl font-bold font-playfair tracking-wide mb-4 text-white antialiased">Manage Reviews</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {reviews.map((r) => (
+              <div key={r._id} className="relative group rounded-2xl bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 shadow-xl p-4 flex flex-col gap-2 hover:scale-[1.03] transition-all duration-300 border border-blue-800/40 animate-fade-in">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-bold text-blue-200">{r.user?.name || r.user}</span>
+                  {r.user?.email && <span className="text-xs text-blue-400">({r.user.email})</span>}
+                </div>
+                <div className="font-bold text-white mb-1">{r.car?.name || r.car}</div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-yellow-900/60 text-yellow-300">{r.rating} ⭐</span>
+                </div>
+                <div className="text-blue-200 text-xs mb-1">{r.comment}</div>
                 {r.adminReply && (
-                  <p className="text-blue-700"><strong>Admin Reply:</strong> {r.adminReply}</p>
+                  <div className="text-blue-400 text-xs mt-1"><strong>Admin Reply:</strong> {r.adminReply}</div>
                 )}
                 <div className="flex gap-2 mt-2">
                   <input
@@ -489,21 +557,42 @@ const Admin = () => {
                     placeholder="Write a reply..."
                     value={replyInputs[r._id] || ""}
                     onChange={e => handleReplyChange(r._id, e.target.value)}
-                    className="p-1 border rounded"
-                    style={{ minWidth: 180 }}
+                    className="p-1 rounded-xl bg-gray-800 text-white border-0 focus:ring-2 focus:ring-blue-500 min-w-[120px] flex-1"
                   />
-                  <button
-                    className="bg-blue-500 text-white px-3 py-1 rounded"
+                  <Button
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-xl transition-all duration-300"
                     onClick={() => handleReplySubmit(r._id)}
                     disabled={!replyInputs[r._id] || replyLoading[r._id]}
-                  >Reply</button>
+                  >Reply</Button>
+                  <Button className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-xl transition-all duration-300" onClick={() => handleDeleteReview(r._id)}>Delete</Button>
                 </div>
               </div>
-              <button className="bg-red-500 text-white px-3 py-1 rounded" onClick={() => handleDeleteReview(r._id)}>Delete</button>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
+      <style>{`
+        .animate-gradient-text {
+          background: linear-gradient(-45deg, #3b82f6, #8b5cf6, #06b6d4, #8b5cf6, #3b82f6);
+          background-size: 400% 400%;
+          animation: gradient-move 6s ease infinite;
+          background-clip: text;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+        @keyframes gradient-move {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        @keyframes float-gentle {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-6px); }
+        }
+        .animate-float-gentle {
+          animation: float-gentle 3s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 };

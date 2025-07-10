@@ -11,7 +11,8 @@ const {
   getBookingStats,
   initiatePayment,     // ✅ New
   verifyPayment,        // ✅ New
-  checkBookingConflict
+  checkBookingConflict,
+  getUserBookingStats, // <-- add this
 } = require("../controllers/bookingController");
 
 const auth = require("../middlewares/authMiddleware");
@@ -20,6 +21,7 @@ const isAdmin = require("../middlewares/roleMiddleware");
 // 🚗 User Routes
 router.post("/", auth, createBooking);
 router.get("/my", auth, getUserBookings);
+router.get("/my/stats", auth, getUserBookingStats); // <-- add this
 router.put("/cancel/:id", auth, cancelBooking);
 
 // 🛠️ Admin Routes

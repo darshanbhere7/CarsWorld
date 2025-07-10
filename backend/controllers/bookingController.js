@@ -167,6 +167,36 @@ const getBookingStats = async (req, res) => {
   }
 };
 
+// 📊 User Booking Stats
+const getUserBookingStats = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const bookings = await Booking.find({ user: userId });
+    const totalBookings = bookings.length;
+    const completedBookings = bookings.filter(b => b.status === "Completed").length;
+    const cancelledBookings = bookings.filter(b => b.status === "Cancelled").length;
+    const activeBookings = bookings.filter(b => b.status === "Booked").length;
+    const totalSpent = bookings.filter(b => b.status === "Completed").reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+
+    // For charting: count by status
+    const statusCounts = bookings.reduce((acc, b) => {
+      acc[b.status] = (acc[b.status] || 0) + 1;
+      return acc;
+    }, {});
+
+    res.status(200).json({
+      totalBookings,
+      completedBookings,
+      cancelledBookings,
+      activeBookings,
+      totalSpent,
+      statusCounts,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // ✅ INITIATE PAYMENT (Mocked for development)
 const initiatePayment = async (req, res) => {
   try {
@@ -243,4 +273,5 @@ module.exports = {
   initiatePayment,
   verifyPayment,
   checkBookingConflict,
+  getUserBookingStats,
 };

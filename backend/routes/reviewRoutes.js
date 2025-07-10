@@ -8,6 +8,7 @@ const {
   deleteReview,
   getAllReviews, // ✅ added
   adminReplyToReview,
+  getUserReviews,
 } = require("../controllers/reviewController");
 
 const auth = require("../middlewares/authMiddleware");
@@ -15,6 +16,9 @@ const isAdmin = require("../middlewares/roleMiddleware");
 
 // Add or update review
 router.post("/", auth, addReview);
+
+// Get all reviews by the logged-in user
+router.get("/user", auth, getUserReviews);
 
 // Get reviews for a specific car
 router.get("/:carId", getCarReviews);

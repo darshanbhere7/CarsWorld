@@ -4,6 +4,13 @@ import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { socket } from "../lib/utils";
 import { useAuth } from "../context/AuthContext";
+import { Search, Filter, RotateCcw, Star, Heart, MapPin, Fuel, Settings, Calendar, TrendingUp } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 
 const Cars = () => {
   const [cars, setCars] = useState([]);
@@ -11,13 +18,12 @@ const Cars = () => {
   const [ratingsMap, setRatingsMap] = useState({}); // { carId: { avg: "4.5", count: 12 } }
 
   const [search, setSearch] = useState("");
-  const [location, setLocation] = useState("");
-  const [fuelType, setFuelType] = useState("");
-  const [transmission, setTransmission] = useState("");
-  const [brand, setBrand] = useState("");
+  const [location, setLocation] = useState("all-locations");
+  const [fuelType, setFuelType] = useState("all-fuel-types");
+  const [transmission, setTransmission] = useState("all-transmissions");
+  const [brand, setBrand] = useState("all-brands");
   const [availabilityOnly, setAvailabilityOnly] = useState(false);
-  const [showTopRatedOnly, setShowTopRatedOnly] = useState(false); // ✅ NEW
-  const [sortOption, setSortOption] = useState("");
+  const [sortOption, setSortOption] = useState("default");
 
   const [currentPage, setCurrentPage] = useState(1);
   const carsPerPage = 6;
@@ -85,18 +91,13 @@ const Cars = () => {
       );
     }
 
-    if (brand) result = result.filter((car) => car.brand === brand);
-    if (location) result = result.filter((car) =>
+    if (brand && brand !== "all-brands") result = result.filter((car) => car.brand === brand);
+    if (location && location !== "all-locations") result = result.filter((car) =>
       car.location.toLowerCase().includes(location.toLowerCase())
     );
-    if (fuelType) result = result.filter((car) => car.fuelType === fuelType);
-    if (transmission) result = result.filter((car) => car.transmission === transmission);
+    if (fuelType && fuelType !== "all-fuel-types") result = result.filter((car) => car.fuelType === fuelType);
+    if (transmission && transmission !== "all-transmissions") result = result.filter((car) => car.transmission === transmission);
     if (availabilityOnly) result = result.filter((car) => car.availability);
-    if (showTopRatedOnly) {
-      result = result.filter(
-        (car) => ratingsMap[car._id] && parseFloat(ratingsMap[car._id].avg) >= 4
-      );
-    }
 
     if (sortOption === "priceLow") {
       result.sort((a, b) => a.pricePerDay - b.pricePerDay);
@@ -121,7 +122,6 @@ const Cars = () => {
     fuelType,
     transmission,
     availabilityOnly,
-    showTopRatedOnly,
     sortOption,
     cars,
     ratingsMap,
@@ -153,13 +153,12 @@ const Cars = () => {
 
   const resetFilters = () => {
     setSearch("");
-    setLocation("");
-    setFuelType("");
-    setTransmission("");
-    setBrand("");
+    setLocation("all-locations");
+    setFuelType("all-fuel-types");
+    setTransmission("all-transmissions");
+    setBrand("all-brands");
     setAvailabilityOnly(false);
-    setShowTopRatedOnly(false);
-    setSortOption("");
+    setSortOption("default");
     toast.info("Filters reset.");
   };
 
@@ -174,125 +173,264 @@ const Cars = () => {
   const totalPages = Math.ceil(filteredCars.length / carsPerPage);
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <h2 className="text-2xl font-bold mb-4">Browse Cars</h2>
-
-      {/* 🔍 Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-4">
-        <input
-          type="text"
-          placeholder="Search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="p-2 border rounded"
-        />
-        <select value={brand} onChange={(e) => setBrand(e.target.value)} className="p-2 border rounded">
-          <option value="">All Brands</option>
-          {uniqueBrands.map((b, i) => <option key={i} value={b}>{b}</option>)}
-        </select>
-        <select value={location} onChange={(e) => setLocation(e.target.value)} className="p-2 border rounded">
-          <option value="">All Locations</option>
-          {uniqueLocations.map((l, i) => <option key={i} value={l}>{l}</option>)}
-        </select>
-        <select value={fuelType} onChange={(e) => setFuelType(e.target.value)} className="p-2 border rounded">
-          <option value="">All Fuel Types</option>
-          {uniqueFuelTypes.map((f, i) => <option key={i} value={f}>{f}</option>)}
-        </select>
-        <select value={transmission} onChange={(e) => setTransmission(e.target.value)} className="p-2 border rounded">
-          <option value="">All Transmissions</option>
-          {uniqueTransmissions.map((t, i) => <option key={i} value={t}>{t}</option>)}
-        </select>
-        <button onClick={resetFilters} className="bg-gray-300 hover:bg-gray-400 text-sm px-3 py-2 rounded">Reset</button>
-      </div>
-
-      {/* ✅ Extra Filters */}
-      <div className="flex flex-wrap gap-4 items-center justify-between mb-6">
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={availabilityOnly} onChange={(e) => setAvailabilityOnly(e.target.checked)} />
-          Available Only
-        </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={showTopRatedOnly} onChange={(e) => setShowTopRatedOnly(e.target.checked)} />
-          4★ & above
-        </label>
-        <select value={sortOption} onChange={(e) => setSortOption(e.target.value)} className="p-2 border rounded">
-          <option value="">Sort By</option>
-          <option value="priceLow">Price: Low to High</option>
-          <option value="priceHigh">Price: High to Low</option>
-          <option value="newest">Newest</option>
-          <option value="highestRated">Highest Rated</option>
-        </select>
-      </div>
-
-      {/* 🚗 Cars Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {currentCars.length === 0 ? (
-          <p className="col-span-full text-gray-600">No cars found.</p>
-        ) : (
-          currentCars.map((car) => {
-            const rating = ratingsMap[car._id];
-
-            return (
-              <div key={car._id} className="relative">
-                <Link to={`/cars/${car._id}`}>
-                  <div className="border rounded-lg overflow-hidden bg-white hover:shadow-lg transition">
-                    <img src={car.image} alt={car.name} className="w-full h-48 object-cover" />
-                    <div className="p-4">
-                      <h3 className="font-bold text-lg">{car.name}</h3>
-
-                      {rating ? (
-                        <div className="flex items-center gap-1 text-yellow-500 text-sm mb-1">
-                          {Array.from({ length: 5 }).map((_, i) => (
-                            <span key={i}>
-                              {i < Math.floor(rating.avg) ? "★" : "☆"}
-                            </span>
-                          ))}
-                          <span className="text-gray-600">({rating.count})</span>
-                        </div>
-                      ) : (
-                        <p className="text-sm text-gray-400">No reviews yet</p>
-                      )}
-
-                      <p className="text-sm text-gray-500">{car.brand} • {car.modelYear}</p>
-                      <p className="text-sm text-gray-500">{car.fuelType} • {car.transmission}</p>
-                      <p className="text-blue-600 font-semibold mt-2">₹{car.pricePerDay} / day</p>
-                      <p className="text-xs text-gray-500 mt-1">{car.location}</p>
-                    </div>
-                  </div>
-                </Link>
-                {/* Heart Button */}
-                {user && (
-                  <button
-                    className="absolute top-2 right-2 text-2xl focus:outline-none"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleWishlist(car._id);
-                    }}
-                    style={{ background: "rgba(255,255,255,0.8)", borderRadius: "50%", padding: 4 }}
-                  >
-                    {wishlistIds.includes(car._id) ? "❤️" : "🤍"}
-                  </button>
-                )}
+    <div className="min-h-screen bg-gradient-to-br from-blue-950 via-purple-950 to-gray-900 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold font-playfair tracking-wide text-white mb-2 animate-fade-in drop-shadow-lg antialiased">
+            Browse Premium Cars
+          </h1>
+          <p className="text-blue-200 text-lg">
+            Discover your perfect ride from our curated collection
+          </p>
+        </div>
+        {/* Filters Section */}
+        <Card className="mb-8 border-0 bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 backdrop-blur-xl rounded-2xl shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] ring-1 ring-blue-800/40">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Filter className="w-6 h-6 text-blue-400 animate-fade-in" />
+              <h3 className="text-xl font-bold font-playfair tracking-wide text-white antialiased">Filters</h3>
+            </div>
+            <div className="flex flex-wrap gap-4 items-center">
+              {/* Search Input */}
+              <div className="relative flex-1 min-w-[180px]">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-400 w-4 h-4 pointer-events-none" />
+                <Input
+                  className="pl-10 bg-gradient-to-r from-blue-950/60 via-purple-950/60 to-gray-900/60 text-white placeholder:text-blue-300 border border-blue-800/60 shadow-md rounded-lg focus:ring-2 focus:ring-blue-500/60 focus:border-blue-400 transition-all duration-200"
+                  placeholder="Search cars..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                />
               </div>
-            );
-          })
+              {/* Brand Dropdown */}
+              <Select value={brand} onValueChange={setBrand}>
+                <SelectTrigger className="min-w-[140px] bg-gradient-to-r from-blue-950/60 via-purple-950/60 to-gray-900/60 text-white border border-blue-800/60 shadow-md rounded-lg focus:ring-2 focus:ring-blue-500/60 focus:border-blue-400 transition-all duration-200 hover:ring-2 hover:ring-blue-400/60 group">
+                  <SelectValue placeholder="All Brands" className="text-blue-100 group-hover:text-blue-300" />
+                </SelectTrigger>
+                <SelectContent className="bg-gradient-to-br from-blue-900/90 via-purple-900/90 to-gray-900/90 text-white border border-blue-800/60 shadow-xl rounded-xl animate-fade-in animate-duration-300">
+                  <SelectItem value="all-brands">All Brands</SelectItem>
+                  {uniqueBrands.map((b) => (
+                    <SelectItem key={b} value={b}>{b}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {/* Location Dropdown */}
+              <Select value={location} onValueChange={setLocation}>
+                <SelectTrigger className="min-w-[140px] bg-gradient-to-r from-blue-950/60 via-purple-950/60 to-gray-900/60 text-white border border-blue-800/60 shadow-md rounded-lg focus:ring-2 focus:ring-blue-500/60 focus:border-blue-400 transition-all duration-200 hover:ring-2 hover:ring-blue-400/60 group">
+                  <SelectValue placeholder="All Locations" className="text-blue-100 group-hover:text-blue-300" />
+                </SelectTrigger>
+                <SelectContent className="bg-gradient-to-br from-blue-900/90 via-purple-900/90 to-gray-900/90 text-white border border-blue-800/60 shadow-xl rounded-xl animate-fade-in animate-duration-300">
+                  <SelectItem value="all-locations">All Locations</SelectItem>
+                  {uniqueLocations.map((l) => (
+                    <SelectItem key={l} value={l}>{l}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {/* Fuel Type Dropdown */}
+              <Select value={fuelType} onValueChange={setFuelType}>
+                <SelectTrigger className="min-w-[120px] bg-gradient-to-r from-blue-950/60 via-purple-950/60 to-gray-900/60 text-white border border-blue-800/60 shadow-md rounded-lg focus:ring-2 focus:ring-blue-500/60 focus:border-blue-400 transition-all duration-200 hover:ring-2 hover:ring-blue-400/60 group">
+                  <SelectValue placeholder="Fuel Type" className="text-blue-100 group-hover:text-blue-300" />
+                </SelectTrigger>
+                <SelectContent className="bg-gradient-to-br from-blue-900/90 via-purple-900/90 to-gray-900/90 text-white border border-blue-800/60 shadow-xl rounded-xl animate-fade-in animate-duration-300">
+                  <SelectItem value="all-fuel-types">All</SelectItem>
+                  {uniqueFuelTypes.map((f) => (
+                    <SelectItem key={f} value={f}>{f}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {/* Transmission Dropdown */}
+              <Select value={transmission} onValueChange={setTransmission}>
+                <SelectTrigger className="min-w-[120px] bg-gradient-to-r from-blue-950/60 via-purple-950/60 to-gray-900/60 text-white border border-blue-800/60 shadow-md rounded-lg focus:ring-2 focus:ring-blue-500/60 focus:border-blue-400 transition-all duration-200 hover:ring-2 hover:ring-blue-400/60 group">
+                  <SelectValue placeholder="Transmission" className="text-blue-100 group-hover:text-blue-300" />
+                </SelectTrigger>
+                <SelectContent className="bg-gradient-to-br from-blue-900/90 via-purple-900/90 to-gray-900/90 text-white border border-blue-800/60 shadow-xl rounded-xl animate-fade-in animate-duration-300">
+                  <SelectItem value="all-transmissions">All</SelectItem>
+                  {uniqueTransmissions.map((t) => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {/* Reset Button */}
+              <Button onClick={resetFilters} variant="outline" className="bg-white/90 text-blue-900 border border-blue-300 shadow hover:bg-blue-100 hover:text-blue-900 transition-all duration-200 flex items-center gap-2 px-5 py-2 rounded-lg">
+                <RotateCcw className="w-4 h-4" /> Reset
+              </Button>
+              {/* Sort Dropdown */}
+              <Select value={sortOption} onValueChange={setSortOption}>
+                <SelectTrigger className="min-w-[120px] bg-gradient-to-r from-blue-950/60 via-purple-950/60 to-gray-900/60 text-white border border-blue-800/60 shadow-md rounded-lg focus:ring-2 focus:ring-blue-500/60 focus:border-blue-400 transition-all duration-200 hover:ring-2 hover:ring-blue-400/60 group">
+                  <SelectValue placeholder="Sort By" className="text-blue-100 group-hover:text-blue-300" />
+                </SelectTrigger>
+                <SelectContent className="bg-gradient-to-br from-blue-900/90 via-purple-900/90 to-gray-900/90 text-white border border-blue-800/60 shadow-xl rounded-xl animate-fade-in animate-duration-300">
+                  <SelectItem value="default">Default</SelectItem>
+                  <SelectItem value="priceLow">Price: Low to High</SelectItem>
+                  <SelectItem value="priceHigh">Price: High to Low</SelectItem>
+                  <SelectItem value="newest">Newest</SelectItem>
+                  <SelectItem value="highestRated">Highest Rated</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {/* Checkboxes */}
+            <div className="flex flex-wrap gap-6 mt-4">
+              <label className="flex items-center gap-2 cursor-pointer select-none text-white font-inter text-base">
+                <Checkbox checked={availabilityOnly} onCheckedChange={setAvailabilityOnly} className="scale-110 focus:ring-2 focus:ring-blue-500/60 border-blue-400 shadow-sm transition-all" />
+                Available Only
+              </label>
+            </div>
+          </CardContent>
+        </Card>
+        {/* Results Info */}
+        <div className="mb-6">
+          <p className="text-blue-200">
+            Showing {currentCars.length} of {filteredCars.length} cars
+          </p>
+        </div>
+        {/* Cars Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          {currentCars.length === 0 ? (
+            <div className="col-span-full text-center py-12">
+              <div className="text-blue-400 text-6xl mb-4">🚗</div>
+              <p className="text-blue-200 text-lg">No cars found matching your criteria</p>
+            </div>
+          ) : (
+            currentCars.map((car) => {
+              const rating = ratingsMap[car._id];
+              return (
+                <div key={car._id} className="group relative animate-fade-in">
+                  <Card className="overflow-hidden border-0 shadow-2xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 backdrop-blur-md rounded-2xl">
+                    <Link to={`/cars/${car._id}`}> 
+                      <div className="relative overflow-hidden">
+                        <img 
+                          src={car.image} 
+                          alt={car.name} 
+                          className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300 rounded-t-2xl" 
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-t-2xl" />
+                        {/* Availability Badge */}
+                        {car.availability && (
+                          <Badge className="absolute top-3 left-3 bg-green-500 hover:bg-green-600 text-white border-0 shadow-md">
+                            Available
+                          </Badge>
+                        )}
+                      </div>
+                      <CardContent className="p-6">
+                        <div className="flex justify-between items-start mb-3">
+                          <h3 className="font-bold text-xl font-playfair tracking-wide text-white group-hover:text-blue-400 transition-colors antialiased">
+                            {car.name}
+                          </h3>
+                        </div>
+                        {/* Rating */}
+                        <div className="mb-3">
+                          {rating ? (
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center">
+                                {Array.from({ length: 5 }).map((_, i) => (
+                                  <Star 
+                                    key={i} 
+                                    className={`w-4 h-4 ${i < Math.floor(rating.avg) ? 'text-yellow-400 fill-current' : 'text-blue-900/40'}`}
+                                  />
+                                ))}
+                              </div>
+                              <span className="text-sm text-blue-200">
+                                {rating.avg} ({rating.count} reviews)
+                              </span>
+                            </div>
+                          ) : (
+                            <p className="text-sm text-blue-400 flex items-center gap-1">
+                              <Star className="w-4 h-4" />
+                              No reviews yet
+                            </p>
+                          )}
+                        </div>
+                        {/* Car Details */}
+                        <div className="space-y-2 mb-4">
+                          <p className="text-sm text-blue-200 flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4 text-blue-400" />
+                            {car.brand} • {car.modelYear}
+                          </p>
+                          <p className="text-sm text-blue-200 flex items-center gap-2">
+                            <Fuel className="w-4 h-4 text-green-400" />
+                            {car.fuelType}
+                          </p>
+                          <p className="text-sm text-blue-200 flex items-center gap-2">
+                            <Settings className="w-4 h-4 text-purple-400" />
+                            {car.transmission}
+                          </p>
+                          <p className="text-sm text-blue-200 flex items-center gap-2">
+                            <MapPin className="w-4 h-4 text-red-400" />
+                            {car.location}
+                          </p>
+                        </div>
+                        {/* Price */}
+                        <div className="bg-gradient-to-r from-blue-900/60 to-purple-900/60 rounded-lg p-3">
+                          <p className="text-2xl font-bold text-blue-300">
+                            ₹{car.pricePerDay}
+                            <span className="text-sm text-blue-200 font-normal"> / day</span>
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Link>
+                    {/* Wishlist Button */}
+                    {user && (
+                      <Button
+                        className="absolute top-3 right-3 p-2 rounded-full bg-blue-950/80 hover:bg-blue-900/90 shadow-md border-0 transition-all duration-200"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleWishlist(car._id);
+                        }}
+                        variant="ghost"
+                      >
+                        <Heart 
+                          className={`w-5 h-5 transition-colors ${
+                            wishlistIds.includes(car._id) 
+                              ? 'text-red-500 fill-current' 
+                              : 'text-blue-300 hover:text-red-500'
+                          }`}
+                        />
+                      </Button>
+                    )}
+                  </Card>
+                </div>
+              );
+            })
+          )}
+        </div>
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 mt-12">
+            <div className="flex gap-2">
+              {Array.from({ length: totalPages }, (_, i) => (
+                <Button
+                  key={i}
+                  onClick={() => setCurrentPage(i + 1)}
+                  variant={currentPage === i + 1 ? "default" : "outline"}
+                  className={`w-10 h-10 rounded-full transition-all duration-200 ${
+                    currentPage === i + 1 
+                      ? 'bg-gradient-to-r from-blue-700 to-purple-700 text-white shadow-lg' 
+                      : 'bg-blue-950/60 text-blue-200 border-blue-800 hover:bg-blue-900/80'
+                  }`}
+                >
+                  {i + 1}
+                </Button>
+              ))}
+            </div>
+          </div>
         )}
       </div>
-
-      {/* 📄 Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center gap-2 mt-6">
-          {Array.from({ length: totalPages }, (_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrentPage(i + 1)}
-              className={`px-4 py-2 rounded border ${currentPage === i + 1 ? "bg-blue-600 text-white" : "bg-white"}`}
-            >
-              {i + 1}
-            </button>
-          ))}
-        </div>
-      )}
+      <style>{`
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.6s ease-out forwards;
+        }
+      `}</style>
     </div>
   );
 };

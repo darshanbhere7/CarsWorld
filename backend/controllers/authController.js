@@ -48,6 +48,7 @@ const login = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        avatar: user.avatar, // include avatar in login response
       },
     });
   } catch (err) {
@@ -69,10 +70,12 @@ const getProfile = async (req, res) => {
 // Update user profile (name, email)
 const updateProfile = async (req, res) => {
   try {
-    const { name, email } = req.body;
+    const { name, email, avatar } = req.body;
+    const updateFields = { name, email };
+    if (avatar !== undefined) updateFields.avatar = avatar;
     const user = await User.findByIdAndUpdate(
       req.user.userId,
-      { name, email },
+      updateFields,
       { new: true, runValidators: true, context: 'query' }
     ).select("-password");
     if (!user) return res.status(404).json({ message: "User not found" });
