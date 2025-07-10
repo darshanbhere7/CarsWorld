@@ -95,7 +95,7 @@ const stats = [
 ];
 
 function Car3DViewer() {
-  const { scene } = useGLTF('/src/assets/car.glb');
+  const { scene } = useGLTF('/car.glb');
   return <primitive object={scene} scale={3.2} position={[-1.3, -1.2, 0]} />;
 }
 

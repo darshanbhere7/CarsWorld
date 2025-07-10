@@ -13,6 +13,7 @@ const app = express();
 const allowedOrigins = [
   "http://localhost:5173",
   "https://carsworld-frontend.onrender.com", // example deployed frontend URL, update if different
+  "https://cars-world-dun.vercel.app", // Vercel deployed frontend
 ];
 
 app.use(cors({
