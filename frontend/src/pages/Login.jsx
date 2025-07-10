@@ -19,11 +19,16 @@ const Login = () => {
   const headerRef = useRef(null);
   const buttonRef = useRef(null);
 
+  // Helper to detect mobile
+  const isMobile = window.innerWidth < 768;
+
   useEffect(() => {
-    gsap.fromTo(cardRef.current, { opacity: 0, y: 40, scale: 0.98 }, { opacity: 1, y: 0, scale: 1, duration: 0.8, ease: "power3.out" });
-    gsap.fromTo(headerRef.current, { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.7, delay: 0.2, ease: "power3.out" });
-    gsap.fromTo(buttonRef.current, { opacity: 0, scale: 0.95 }, { opacity: 1, scale: 1, duration: 0.7, delay: 0.4, ease: "power2.out" });
-  }, []);
+    if (!isMobile) {
+      gsap.fromTo(cardRef.current, { opacity: 0, y: 40, scale: 0.98 }, { opacity: 1, y: 0, scale: 1, duration: 0.8, ease: "power3.out" });
+      gsap.fromTo(headerRef.current, { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.7, delay: 0.2, ease: "power3.out" });
+      gsap.fromTo(buttonRef.current, { opacity: 0, scale: 0.95 }, { opacity: 1, scale: 1, duration: 0.7, delay: 0.4, ease: "power2.out" });
+    }
+  }, [isMobile]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -54,22 +59,22 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-950 via-purple-950 to-gray-900 animate-gradient-move">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-950 via-purple-950 to-gray-900 animate-gradient-move p-2 sm:p-4">
       <div
         ref={cardRef}
-        className="w-full max-w-md p-8 rounded-2xl shadow-2xl bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 backdrop-blur-lg animate-fade-in relative overflow-hidden border border-blue-800/40 group"
+        className="w-full max-w-xs sm:max-w-md p-4 sm:p-8 rounded-2xl shadow-2xl bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 backdrop-blur-lg animate-fade-in relative overflow-hidden border border-blue-800/40 group"
       >
         {/* Logo and Brand */}
         <div className="flex flex-col items-center mb-4">
-          <img src={navbarLogo} alt="CarsWorld Logo" className="w-16 h-16 object-contain drop-shadow-2xl animate-bounce-slow mb-0.5" />
-          <span className="text-2xl font-playfair font-extrabold tracking-wider animate-gradient-text text-center antialiased logo">CarsWorld</span>
-          <span className="text-blue-200 text-sm font-inter mt-1">Drive Your Dreams</span>
+          <img src={navbarLogo} alt="CarsWorld Logo" className="w-12 h-12 sm:w-16 sm:h-16 object-contain drop-shadow-2xl animate-bounce-slow mb-0.5" />
+          <span className="text-xl sm:text-2xl font-playfair font-extrabold tracking-wider animate-gradient-text text-center antialiased logo">CarsWorld</span>
+          <span className="text-blue-200 text-xs sm:text-sm font-inter mt-1">Drive Your Dreams</span>
         </div>
         {/* Glowing border effect */}
         <div className="pointer-events-none absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-blue-500 group-focus-within:border-purple-500 transition-all duration-300 group-hover:shadow-[0_0_32px_4px_rgba(80,63,205,0.25)]" />
-        <h2 ref={headerRef} className="text-3xl font-bold font-playfair tracking-wide text-white text-center mb-6 antialiased animate-gradient-text">Sign in to your account</h2>
+        <h2 ref={headerRef} className="text-2xl sm:text-3xl font-bold font-playfair tracking-wide text-white text-center mb-6 antialiased animate-gradient-text">Sign in to your account</h2>
         {error && <p className="text-red-400 mb-4 text-center font-semibold animate-pulse">{error}</p>}
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
           <div>
             <Label htmlFor="email" className="text-blue-200">Email</Label>
             <Input
@@ -80,7 +85,8 @@ const Login = () => {
               value={form.email}
               onChange={handleChange}
               required
-              className="mt-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 transition-all duration-200 bg-gradient-to-r from-blue-950/60 via-purple-950/60 to-gray-900/60 text-white placeholder:text-blue-300 border border-blue-800/60 shadow-md rounded-lg"
+              aria-label="Email address"
+              className="mt-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 transition-all duration-200 bg-gradient-to-r from-blue-950/60 via-purple-950/60 to-gray-900/60 text-white placeholder:text-blue-300 border border-blue-800/60 shadow-md rounded-lg text-base sm:text-lg py-2 sm:py-2.5"
             />
           </div>
           <div>
@@ -93,24 +99,26 @@ const Login = () => {
               value={form.password}
               onChange={handleChange}
               required
-              className="mt-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 transition-all duration-200 bg-gradient-to-r from-blue-950/60 via-purple-950/60 to-gray-900/60 text-white placeholder:text-blue-300 border border-blue-800/60 shadow-md rounded-lg"
+              aria-label="Password"
+              className="mt-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 transition-all duration-200 bg-gradient-to-r from-blue-950/60 via-purple-950/60 to-gray-900/60 text-white placeholder:text-blue-300 border border-blue-800/60 shadow-md rounded-lg text-base sm:text-lg py-2 sm:py-2.5"
             />
           </div>
           <Button
             ref={buttonRef}
             type="submit"
-            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-purple-600 hover:to-blue-600 focus:ring-4 focus:ring-blue-400/40 text-white font-semibold py-2 rounded-xl transition-all duration-300 hover:scale-105 focus:scale-102 active:scale-98 shadow-lg relative overflow-hidden group"
+            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-purple-600 hover:to-blue-600 focus:ring-4 focus:ring-blue-400/40 text-white font-semibold py-2 sm:py-3 rounded-xl transition-all duration-300 hover:scale-105 focus:scale-102 active:scale-98 shadow-lg relative overflow-hidden group text-base sm:text-lg"
             style={{ boxShadow: '0 4px 24px 0 rgba(80, 63, 205, 0.25)' }}
+            aria-label="Login"
           >
             <span className="relative z-10">Login</span>
             {/* Glowing effect */}
             <span className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-all duration-300 bg-gradient-to-r from-blue-400/30 via-purple-400/30 to-blue-400/30 blur-[2px]" />
           </Button>
         </form>
-        <p className="mt-6 text-sm text-blue-200 text-center">
+        <p className="mt-6 text-xs sm:text-sm text-blue-200 text-center">
           Don't have an account?{' '}
-          <Button variant="link" className="text-blue-400 hover:text-blue-300 p-0 h-auto" asChild>
-            <a href="/register">Register</a>
+          <Button variant="link" className="text-blue-400 hover:text-blue-300 p-0 h-auto text-xs sm:text-sm" asChild>
+            <a href="/register" tabIndex={0} aria-label="Go to register page">Register</a>
           </Button>
         </p>
       </div>

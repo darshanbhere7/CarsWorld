@@ -46,6 +46,10 @@ import {
   Edit
 } from "lucide-react";
 import gsap from "gsap";
+import { Swiper, SwiperSlide } from 'swiper/react';
+import 'swiper/css';
+import 'swiper/css/effect-coverflow';
+import { EffectCoverflow, Pagination } from 'swiper/modules';
 
 const CarDetail = () => {
   const { id } = useParams();
@@ -74,6 +78,9 @@ const CarDetail = () => {
   const specsRef = useRef(null);
   const bookingRef = useRef(null);
   const reviewsRef = useRef(null);
+
+  // Helper to detect mobile
+  const isMobile = window.innerWidth < 768;
 
   useEffect(() => {
     fetchCar();
@@ -108,14 +115,14 @@ const CarDetail = () => {
   }, [pickupDate, returnDate, car?._id]);
 
   useEffect(() => {
-    if (car) {
+    if (car && !isMobile) {
       gsap.fromTo(heroRef.current, { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" });
       gsap.fromTo(infoRef.current, { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.8, delay: 0.2, ease: "power3.out" });
       gsap.fromTo(specsRef.current, { opacity: 0, scale: 0.96 }, { opacity: 1, scale: 1, duration: 0.7, delay: 0.4, ease: "power2.out" });
       gsap.fromTo(bookingRef.current, { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.7, delay: 0.6, ease: "power2.out" });
       gsap.fromTo(reviewsRef.current, { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.7, delay: 0.8, ease: "power2.out" });
     }
-  }, [car]);
+  }, [car, isMobile]);
 
   const fetchCar = async () => {
     try {
@@ -274,7 +281,7 @@ const CarDetail = () => {
               <div className="text-center space-y-6">
                 <div className="relative overflow-hidden rounded-2xl">
                   <img 
-                    src={car.image} 
+                    src={car.images && car.images.length > 0 ? car.images[0] : ''} 
                     alt={car.name} 
                     className="w-full h-64 object-cover transform hover:scale-105 transition-transform duration-500" 
                   />
@@ -306,288 +313,219 @@ const CarDetail = () => {
   const minDate = `${yyyy}-${mm}-${dd}`;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-950 via-purple-950 to-gray-900 p-6">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-950 via-purple-950 to-gray-900 p-2 sm:p-4 md:p-6">
+      <div className="max-w-7xl mx-auto">
         {/* Hero Section */}
-        <Card ref={heroRef} className="shadow-2xl border-0 bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 overflow-hidden rounded-2xl">
-          <div className="relative overflow-hidden rounded-t-xl group">
-            <img 
-              src={car.image} 
-              alt={car.name} 
-              className="w-full h-80 object-cover transform group-hover:scale-105 transition-transform duration-700" 
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-            {/* Wishlist Button */}
-            {user && (
-              <Button
-                onClick={handleWishlist}
-                variant="ghost"
-                size="icon"
-                className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm hover:bg-white shadow-lg rounded-full w-12 h-12 transition-all duration-300 hover:scale-110 focus:scale-105"
-                style={{ zIndex: 2 }}
+        <section ref={heroRef} className="flex flex-col md:flex-row gap-6 md:gap-10 items-center md:items-start mb-8 md:mb-12">
+          {/* Car Image */}
+          <div className="w-full md:w-1/2 flex justify-center items-center">
+            {car && car.images && car.images.length > 1 ? (
+              <Swiper
+                effect="coverflow"
+                grabCursor={true}
+                centeredSlides={true}
+                slidesPerView={isMobile ? 1 : 2}
+                coverflowEffect={{
+                  rotate: 30,
+                  stretch: 0,
+                  depth: 100,
+                  modifier: 1,
+                  slideShadows: true,
+                }}
+                pagination={{ clickable: true }}
+                modules={[EffectCoverflow, Pagination]}
+                className="w-full max-w-xs md:max-w-md rounded-2xl shadow-2xl border-4 border-blue-900"
+                style={{ maxHeight: isMobile ? 220 : 340 }}
               >
-                <Heart 
-                  className={`w-6 h-6 transition-colors duration-300 ${
-                    wishlist.includes(car._id) 
-                      ? "fill-red-500 text-red-500 drop-shadow-lg" 
-                      : "text-gray-600"
-                  }`} 
-                />
-              </Button>
-            )}
+                {car.images.map((img, idx) => (
+                  <SwiperSlide key={idx}>
+                    <img
+                      src={img}
+                      alt={`${car.name} ${idx + 1}`}
+                      className="w-full h-full object-cover rounded-2xl"
+                      loading="lazy"
+                      style={{ maxHeight: isMobile ? 220 : 340 }}
+                    />
+                  </SwiperSlide>
+                ))}
+              </Swiper>
+            ) : car && car.images && car.images.length === 1 ? (
+              <img
+                src={car.images[0]}
+                alt={car.name}
+                className="w-full max-w-xs md:max-w-md rounded-2xl shadow-2xl object-cover border-4 border-blue-900"
+                loading="lazy"
+                style={{ maxHeight: isMobile ? 220 : 340 }}
+              />
+            ) : null}
           </div>
-          <CardContent ref={infoRef} className="p-8">
-            <div className="space-y-6">
-              {/* Car Title & Basic Info */}
-              <div className="space-y-4">
-                <h1 className="text-4xl font-bold font-playfair tracking-wide text-white tracking-tight antialiased">
+          {/* Car Info */}
+          <div ref={infoRef} className="w-full md:w-1/2 flex flex-col gap-4 md:gap-6">
+            {car && (
+              <>
+                <h1 className="text-2xl md:text-4xl font-bold font-playfair tracking-wide text-white mb-2 md:mb-4 antialiased">
                   {car.name}
                 </h1>
-                <div className="flex flex-wrap items-center gap-3 text-gray-600">
-                  <Badge variant="secondary" className="px-3 py-1">
-                    <Car className="w-4 h-4 mr-1" />
-                    {car.brand}
-                  </Badge>
-                  <Badge variant="secondary" className="px-3 py-1">
-                    {car.modelYear}
-                  </Badge>
-                  <Badge variant="secondary" className="px-3 py-1">
-                    <Fuel className="w-4 h-4 mr-1" />
-                    {car.fuelType}
-                  </Badge>
-                  <Badge variant="secondary" className="px-3 py-1">
-                    {car.transmission}
-                  </Badge>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  <Badge className="bg-gradient-to-r from-blue-700 to-purple-700 text-white">{car.brand}</Badge>
+                  <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white">{car.fuelType}</Badge>
+                  <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">{car.transmission}</Badge>
+                  <Badge className="bg-gradient-to-r from-blue-400 to-blue-600 text-white">{car.location}</Badge>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="text-3xl font-bold font-playfair tracking-wide text-blue-400 antialiased">
-                    ₹{car.pricePerDay}
-                    <span className="text-lg font-normal text-gray-500 ml-2">/ day</span>
-                  </div>
-                  {averageRating && (
-                    <div className="flex items-center space-x-2 bg-yellow-50 px-4 py-2 rounded-full shadow-md transition-all duration-300 hover:scale-105 hover:shadow-xl hover:bg-gradient-to-r hover:from-yellow-200 hover:to-yellow-50 group cursor-pointer" style={{ minWidth: 160 }}>
-                      <div className="flex items-center">
-                        {renderStars(Math.round(averageRating))}
-                      </div>
-                      <span className="font-bold text-blue-900 group-hover:text-purple-700 transition-colors duration-200">{averageRating}</span>
-                      <span className="text-blue-700 group-hover:text-purple-700 transition-colors duration-200">({reviews.length} reviews)</span>
-                    </div>
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-6 text-blue-200 text-base md:text-lg mb-2">
+                  <span className="flex items-center gap-2"><Users className="w-5 h-5" /> {car.seats} seats</span>
+                  <span className="flex items-center gap-2"><Gauge className="w-5 h-5" /> {car.mileage} kmpl</span>
+                  <span className="flex items-center gap-2"><Palette className="w-5 h-5" /> {car.color}</span>
+                </div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Star className="w-5 h-5 text-yellow-400" />
+                  <span className="text-blue-200 font-semibold">{car.avgRating || 'N/A'}</span>
+                  <span className="text-blue-300 text-sm">({car.reviewCount || 0} reviews)</span>
+                </div>
+                <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
+                  ₹{car.pricePerDay} <span className="text-base md:text-lg text-blue-200 font-normal">/ day</span>
+                </div>
+                <div className="flex gap-2 mt-2">
+                  <Button
+                    variant="outline"
+                    className="text-blue-400 border-blue-700/60 hover:bg-blue-900/40 text-base px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    onClick={fetchCar}
+                  >
+                    Refresh
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="text-pink-400 border-pink-700/60 hover:bg-pink-900/40 text-base px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400"
+                    onClick={fetchWishlist}
+                  >
+                    Wishlist
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </section>
+        {/* Specs Section */}
+        <section ref={specsRef} className="mb-8 md:mb-12">
+          <Card className="bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 border-0 shadow-2xl rounded-2xl">
+            <CardContent className="p-4 md:p-8 flex flex-col sm:flex-row gap-4 sm:gap-8">
+              <div className="flex-1 flex flex-col gap-2 text-blue-200 text-base md:text-lg">
+                <div className="flex items-center gap-2"><CalendarDays className="w-5 h-5" /> Model Year: {car?.modelYear}</div>
+                <div className="flex items-center gap-2"><Fuel className="w-5 h-5" /> Fuel: {car?.fuelType}</div>
+                <div className="flex items-center gap-2"><Settings className="w-5 h-5" /> Transmission: {car?.transmission}</div>
+                <div className="flex items-center gap-2"><Gauge className="w-5 h-5" /> Mileage: {car?.mileage} kmpl</div>
+                <div className="flex items-center gap-2"><Palette className="w-5 h-5" /> Color: {car?.color}</div>
+                <div className="flex items-center gap-2"><Users className="w-5 h-5" /> Seats: {car?.seats}</div>
+                <div className="flex items-center gap-2"><MapPin className="w-5 h-5" /> Location: {car?.location}</div>
+              </div>
+              <div className="flex-1 flex flex-col gap-2 text-blue-200 text-base md:text-lg">
+                <div className="flex items-center gap-2"><CheckCircle className="w-5 h-5 text-green-400" /> {car?.availability ? 'Available' : 'Unavailable'}</div>
+                <div className="flex items-center gap-2"><CreditCard className="w-5 h-5" /> Price: ₹{car?.pricePerDay} / day</div>
+                <div className="flex items-center gap-2"><Star className="w-5 h-5 text-yellow-400" /> Avg. Rating: {car?.avgRating || 'N/A'}</div>
+                <div className="flex items-center gap-2"><MessageSquare className="w-5 h-5" /> Reviews: {car?.reviewCount || 0}</div>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+        {/* Booking Section */}
+        <section ref={bookingRef} className="mb-8 md:mb-12">
+          <Card className="bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 border-0 shadow-2xl rounded-2xl">
+            <CardContent className="p-4 md:p-8 flex flex-col gap-4">
+              <h2 className="text-xl md:text-2xl font-bold font-playfair tracking-wide text-white mb-2 md:mb-4 antialiased">Book this Car</h2>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1 flex flex-col gap-2">
+                  <Label htmlFor="pickup-date" className="text-blue-200">Pickup Date</Label>
+                  <Input
+                    id="pickup-date"
+                    type="date"
+                    value={pickupDate}
+                    onChange={e => setPickupDate(e.target.value)}
+                    className="bg-gradient-to-r from-blue-950/60 via-purple-950/60 to-gray-900/60 text-white border border-blue-800/60 shadow-md rounded-lg focus:ring-2 focus:ring-blue-500/60 focus:border-blue-400 text-base md:text-lg py-2 md:py-2.5"
+                    aria-label="Pickup date"
+                  />
+                </div>
+                <div className="flex-1 flex flex-col gap-2">
+                  <Label htmlFor="return-date" className="text-blue-200">Return Date</Label>
+                  <Input
+                    id="return-date"
+                    type="date"
+                    value={returnDate}
+                    onChange={e => setReturnDate(e.target.value)}
+                    className="bg-gradient-to-r from-blue-950/60 via-purple-950/60 to-gray-900/60 text-white border border-blue-800/60 shadow-md rounded-lg focus:ring-2 focus:ring-blue-500/60 focus:border-blue-400 text-base md:text-lg py-2 md:py-2.5"
+                    aria-label="Return date"
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-4 items-center">
+                <div className="flex-1 text-blue-200 text-base md:text-lg">
+                  {totalPrice ? (
+                    <span>Total Price: <span className="font-bold text-white">₹{totalPrice}</span></span>
+                  ) : (
+                    <span>Select valid dates to see total price.</span>
                   )}
                 </div>
+                <Button
+                  onClick={handleBooking}
+                  className="bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-800 hover:to-purple-800 text-white font-bold font-inter border-none shadow-lg hover:shadow-blue-500/25 transition-all duration-300 transform hover:scale-105 px-6 py-2 text-base md:text-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  aria-label="Book now"
+                  disabled={!!bookingConflict || !pickupDate || !returnDate}
+                >
+                  Book Now
+                </Button>
               </div>
-              {/* Car Specifications */}
-                <div ref={specsRef} className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 p-4 rounded-2xl text-center shadow-lg">
-                    <Settings className="w-6 h-6 mx-auto mb-2 text-blue-400" />
-                    <p className="text-sm text-blue-200">Engine</p>
-                    <p className="font-semibold text-white">{car.engine || "N/A"}</p>
-                  </div>
-                  <div className="bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 p-4 rounded-2xl text-center shadow-lg">
-                    <Users className="w-6 h-6 mx-auto mb-2 text-green-400" />
-                    <p className="text-sm text-blue-200">Seating</p>
-                    <p className="font-semibold text-white">{car.seats || "N/A"} people</p>
-                  </div>
-                  <div className="bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 p-4 rounded-2xl text-center shadow-lg">
-                    <Gauge className="w-6 h-6 mx-auto mb-2 text-purple-400" />
-                    <p className="text-sm text-blue-200">Mileage</p>
-                    <p className="font-semibold text-white">{car.mileage || "N/A"}</p>
-                  </div>
-                  <div className="bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 p-4 rounded-2xl text-center shadow-lg">
-                    <Palette className="w-6 h-6 mx-auto mb-2 text-orange-400" />
-                    <p className="text-sm text-blue-200">Color</p>
-                    <p className="font-semibold text-white">{car.color || "N/A"}</p>
-                  </div>
+              {bookingConflict && (
+                <div className="text-red-400 text-sm mt-2 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4" /> {bookingConflict}
                 </div>
-              {/* Location */}
-              <div className="flex items-center space-x-2 text-gray-600">
-                <MapPin className="w-5 h-5" />
-                <span className="font-medium text-white">{car.location}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Description & Features */}
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Description */}
-          {car.description && (
-            <Card className="shadow-2xl border-0 bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 rounded-2xl p-6 transition-all duration-300 hover:shadow-3xl hover:scale-[1.02]">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <MessageSquare className="w-5 h-5 text-blue-400" />
-                  <span className="text-white">Description</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-300 leading-relaxed">{car.description}</p>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Features */}
-          {car.features?.length > 0 && (
-            <Card className="shadow-2xl border-0 bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 rounded-2xl p-6 transition-all duration-300 hover:shadow-3xl hover:scale-[1.02]">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span className="text-white">Features</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {car.features.map((feature, idx) => (
-                    <Badge 
-                      key={idx} 
-                      variant="secondary" 
-                      className="bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border-green-200 hover:from-green-200 hover:to-emerald-200 transition-all duration-300"
-                    >
-                      {feature}
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* Booking Section */}
-        <Card ref={bookingRef} className="shadow-2xl border-0 bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 rounded-2xl p-6">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <CalendarDays className="w-5 h-5 text-blue-400" />
-              <span className="text-white">Book This Car</span>
-            </CardTitle>
-            <CardDescription>
-              <span className="text-blue-200">Select your pickup and return dates to calculate the total price</span>
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="pickup" className="text-white">Pickup Date</Label>
-                <Input
-                  id="pickup"
-                  type="date"
-                  value={pickupDate}
-                  onChange={(e) => setPickupDate(e.target.value)}
-                  min={minDate}
-                  className="transition-all duration-300 focus:ring-2 focus:ring-blue-500 placeholder:text-blue-300 text-white bg-transparent border-blue-400"
-                  placeholder="dd-mm-yyyy"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="return" className="text-white">Return Date</Label>
-                <Input
-                  id="return"
-                  type="date"
-                  value={returnDate}
-                  onChange={(e) => setReturnDate(e.target.value)}
-                  min={minDate}
-                  className="transition-all duration-300 focus:ring-2 focus:ring-blue-500 placeholder:text-blue-300 text-white bg-transparent border-blue-400"
-                  placeholder="dd-mm-yyyy"
-                />
-              </div>
-            </div>
-            
-            {/* Status Messages */}
-            {checkingConflict && (
-              <div className="flex items-center space-x-2 text-blue-400 bg-blue-50 p-3 rounded-lg">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span className="text-white">Checking availability...</span>
-              </div>
-            )}
-            
-            {bookingConflict && (
-              <div className="flex items-center space-x-2 bg-red-500/90 border border-red-700 shadow-lg p-3 rounded-lg animate-fade-in">
-                <AlertCircle className="w-5 h-5 text-white" />
-                <span className="text-white font-semibold drop-shadow-sm">{bookingConflict}</span>
-              </div>
-            )}
-            
-            {totalPrice && !bookingConflict && (
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
-                <div className="flex items-center justify-between">
-                  <span className="text-green-800 font-semibold">Total Price:</span>
-                  <span className="text-2xl font-bold text-green-600">₹{totalPrice}</span>
-                </div>
-              </div>
-            )}
-            
-            {user ? (
-              <Button
-                onClick={handleBooking}
-                disabled={isPaying || !!bookingConflict}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-purple-600 hover:to-blue-600 focus:ring-4 focus:ring-blue-400/40 text-white py-3 text-lg font-semibold transition-all duration-300 transform hover:scale-105 focus:scale-102 active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg"
-                style={{ boxShadow: '0 4px 24px 0 rgba(80, 63, 205, 0.25)' }}
-              >
-                {isPaying ? (
-                  <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <CreditCard className="w-5 h-5 mr-2" />
-                    Pay & Book Now
-                  </>
-                )}
-              </Button>
-            ) : (
-              <div className="text-center p-4 bg-amber-50 rounded-lg border border-amber-200">
-                <p className="text-amber-800 font-medium">Please login to book this car</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
+              )}
+            </CardContent>
+          </Card>
+        </section>
         {/* Reviews Section */}
-        <Card ref={reviewsRef} className="shadow-2xl border-0 bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 rounded-2xl p-6">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Star className="w-5 h-5 text-yellow-500" />
-              <span className="text-white">Ratings & Reviews</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Reviews List Only - Review form removed */}
-            <Separator />
-            {/* Reviews List */}
-            {reviews.length === 0 ? (
-              <div className="text-center py-8 text-blue-200">
-                <MessageSquare className="w-12 h-12 mx-auto mb-4 text-blue-400" />
-                <p className="text-white">No reviews yet. Be the first to review this car!</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {reviews.map((review, index) => (
-                  <div 
-                    key={review._id} 
-                    className="p-4 bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 rounded-2xl border border-blue-900/40 transition-all duration-300 hover:scale-105 hover:shadow-xl animate-fade-in"
-                    style={{ animationDelay: `${index * 0.1}s` }}
-                  >
-                    <div className="flex items-start space-x-3">
-                      <Avatar className="w-10 h-10">
-                        <AvatarImage src={review.user.avatar} />
-                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
-                          {review.user.name?.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <h5 className="font-semibold text-white">{review.user.name}</h5>
-                          <div className="flex items-center space-x-1">
-                            {renderStars(review.rating)}
+        <section ref={reviewsRef} className="mb-8 md:mb-12">
+          <Card className="bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 border-0 shadow-2xl rounded-2xl">
+            <CardContent className="p-4 md:p-8">
+              <h2 className="text-xl md:text-2xl font-bold font-playfair tracking-wide text-white mb-2 md:mb-4 antialiased">Reviews</h2>
+              {/* Reviews List Only - Review form removed */}
+              <Separator />
+              {/* Reviews List */}
+              {reviews.length === 0 ? (
+                <div className="text-center py-8 text-blue-200">
+                  <MessageSquare className="w-12 h-12 mx-auto mb-4 text-blue-400" />
+                  <p className="text-white">No reviews yet. Be the first to review this car!</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {reviews.map((review, index) => (
+                    <div 
+                      key={review._id} 
+                      className="p-4 bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 rounded-2xl border border-blue-900/40 transition-all duration-300 hover:scale-105 hover:shadow-xl animate-fade-in"
+                      style={{ animationDelay: `${index * 0.1}s` }}
+                    >
+                      <div className="flex items-start space-x-3">
+                        <Avatar className="w-10 h-10">
+                          <AvatarImage src={review.user.avatar} />
+                          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+                            {review.user.name?.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <h5 className="font-semibold text-white">{review.user.name}</h5>
+                            <div className="flex items-center space-x-1">
+                              {renderStars(review.rating)}
+                            </div>
                           </div>
+                          <p className="text-blue-200 leading-relaxed">{review.comment}</p>
                         </div>
-                        <p className="text-blue-200 leading-relaxed">{review.comment}</p>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </section>
       </div>
     </div>
   );

@@ -34,16 +34,21 @@ const Profile = () => {
 
   const { updateUser } = useAuth();
 
+  // Helper to detect mobile
+  const isMobile = window.innerWidth < 768;
+
   useEffect(() => {
     fetchProfile();
     fetchStats();
   }, []);
 
   useEffect(() => {
-    gsap.fromTo(avatarRef.current, { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" });
-    gsap.fromTo(profileCardRef.current, { opacity: 0, y: 40, scale: 0.98 }, { opacity: 1, y: 0, scale: 1, duration: 0.8, delay: 0.1, ease: "power3.out" });
-    gsap.fromTo(passwordCardRef.current, { opacity: 0, y: 40, scale: 0.98 }, { opacity: 1, y: 0, scale: 1, duration: 0.8, delay: 0.3, ease: "power3.out" });
-  }, [loading]);
+    if (!isMobile) {
+      gsap.fromTo(avatarRef.current, { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" });
+      gsap.fromTo(profileCardRef.current, { opacity: 0, y: 40, scale: 0.98 }, { opacity: 1, y: 0, scale: 1, duration: 0.8, delay: 0.1, ease: "power3.out" });
+      gsap.fromTo(passwordCardRef.current, { opacity: 0, y: 40, scale: 0.98 }, { opacity: 1, y: 0, scale: 1, duration: 0.8, delay: 0.3, ease: "power3.out" });
+    }
+  }, [loading, isMobile]);
 
   const fetchProfile = async () => {
     try {
@@ -159,21 +164,22 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-blue-950 via-purple-950 to-gray-900 flex flex-col items-center py-10 px-2">
+    <div className="min-h-screen w-full bg-gradient-to-br from-blue-950 via-purple-950 to-gray-900 flex flex-col items-center py-6 sm:py-10 px-2">
       {/* Avatar and Title */}
-      <div className="flex flex-col items-center mb-8">
-        <div ref={avatarRef} className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-700 via-purple-700 to-gray-800 flex items-center justify-center shadow-2xl mb-4 animate-float-gentle relative group overflow-hidden border-4 border-blue-400">
+      <div className="flex flex-col items-center mb-6 sm:mb-8">
+        <div ref={avatarRef} className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gradient-to-br from-blue-700 via-purple-700 to-gray-800 flex items-center justify-center shadow-2xl mb-4 animate-float-gentle relative group overflow-hidden border-4 border-blue-400">
           {avatar ? (
-            <img src={avatar} alt="Profile" className="w-full h-full object-cover rounded-full" />
+            <img src={avatar} alt="Profile" className="w-full h-full object-cover rounded-full" loading="lazy" />
           ) : (
-            <User className="w-20 h-20 text-white drop-shadow-lg" />
+            <User className="w-16 h-16 sm:w-20 sm:h-20 text-white drop-shadow-lg" />
           )}
           <button
             type="button"
-            className="absolute bottom-2 right-2 bg-white border-2 border-blue-500 hover:bg-blue-600 hover:text-white text-blue-600 rounded-full p-2 shadow-lg transition-all duration-200 opacity-90 group-hover:opacity-100 z-10"
+            className="absolute bottom-2 right-2 bg-white border-2 border-blue-500 hover:bg-blue-600 hover:text-white text-blue-600 rounded-full p-2 shadow-lg transition-all duration-200 opacity-90 group-hover:opacity-100 z-10 focus:outline-none focus:ring-2 focus:ring-blue-400"
             onClick={() => fileInputRef.current.click()}
             disabled={avatarUploading}
             title="Change photo"
+            aria-label="Change profile photo"
           >
             <Edit3 className="w-5 h-5" />
           </button>
@@ -184,6 +190,7 @@ const Profile = () => {
             className="hidden"
             onChange={handleAvatarChange}
             disabled={avatarUploading}
+            aria-label="Upload profile photo"
           />
           {avatarUploading && (
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-full z-20">
@@ -191,13 +198,13 @@ const Profile = () => {
             </div>
           )}
         </div>
-        <h1 className="text-3xl font-bold font-playfair tracking-wide animate-gradient-text text-center antialiased mb-1">Profile</h1>
-        <span className="text-blue-200 text-base font-inter">Manage your account and security settings</span>
+        <h1 className="text-2xl sm:text-3xl font-bold font-playfair tracking-wide animate-gradient-text text-center antialiased mb-1">Profile</h1>
+        <span className="text-blue-200 text-sm sm:text-base font-inter">Manage your account and security settings</span>
       </div>
       {/* User Stats Dashboard */}
-      <div className="w-full max-w-5xl mx-auto mb-10">
-        <div className="bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 rounded-2xl shadow-2xl p-8 flex flex-col md:flex-row gap-8 items-center justify-between">
-          <div className="flex-1 min-w-[220px]">
+      <div className="w-full max-w-5xl mx-auto mb-8 sm:mb-10">
+        <div className="bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 rounded-2xl shadow-2xl p-4 sm:p-8 flex flex-col md:flex-row gap-6 sm:gap-8 items-center justify-between">
+          <div className="flex-1 min-w-[180px] sm:min-w-[220px]">
             <h2 className="text-xl md:text-2xl font-bold font-playfair tracking-wide text-white mb-4 antialiased">Your Booking Stats</h2>
             {statsLoading ? (
               <div className="text-blue-200">Loading stats...</div>

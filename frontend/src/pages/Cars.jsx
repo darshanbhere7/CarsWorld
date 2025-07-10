@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { socket } from "../lib/utils";
 import { useAuth } from "../context/AuthContext";
-import { Search, Filter, RotateCcw, Star, Heart, MapPin, Fuel, Settings, Calendar, TrendingUp } from "lucide-react";
+import { Search, Filter, RotateCcw, Star, Heart, MapPin, Fuel, Settings, Calendar, TrendingUp, Car } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -173,107 +173,93 @@ const Cars = () => {
   const totalPages = Math.ceil(filteredCars.length / carsPerPage);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-950 via-purple-950 to-gray-900 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-950 via-purple-950 to-gray-900 p-2 sm:p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold font-playfair tracking-wide text-white mb-2 animate-fade-in drop-shadow-lg antialiased">
+        <div className="text-center mb-6 md:mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold font-playfair tracking-wide text-white mb-2 animate-fade-in drop-shadow-lg antialiased">
             Browse Premium Cars
           </h1>
-          <p className="text-blue-200 text-lg">
+          <p className="text-blue-200 text-base md:text-lg">
             Discover your perfect ride from our curated collection
           </p>
         </div>
         {/* Filters Section */}
-        <Card className="mb-8 border-0 bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 backdrop-blur-xl rounded-2xl shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] ring-1 ring-blue-800/40">
-          <CardContent className="p-6">
+        <Card className="mb-6 md:mb-8 border-0 bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 backdrop-blur-xl rounded-2xl shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] ring-1 ring-blue-800/40">
+          <CardContent className="p-4 md:p-6">
             <div className="flex items-center gap-2 mb-4">
               <Filter className="w-6 h-6 text-blue-400 animate-fade-in" />
-              <h3 className="text-xl font-bold font-playfair tracking-wide text-white antialiased">Filters</h3>
+              <h3 className="text-lg md:text-xl font-bold font-playfair tracking-wide text-white antialiased">Filters</h3>
             </div>
-            <div className="flex flex-wrap gap-4 items-center">
+            <div className="flex flex-col md:flex-row flex-wrap gap-4 md:gap-6 items-stretch md:items-center">
               {/* Search Input */}
               <div className="relative flex-1 min-w-[180px]">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-400 w-4 h-4 pointer-events-none" />
                 <Input
-                  className="pl-10 bg-gradient-to-r from-blue-950/60 via-purple-950/60 to-gray-900/60 text-white placeholder:text-blue-300 border border-blue-800/60 shadow-md rounded-lg focus:ring-2 focus:ring-blue-500/60 focus:border-blue-400 transition-all duration-200"
+                  className="pl-10 bg-gradient-to-r from-blue-950/60 via-purple-950/60 to-gray-900/60 text-white placeholder:text-blue-300 border border-blue-800/60 shadow-md rounded-lg focus:ring-2 focus:ring-blue-500/60 focus:border-blue-400 transition-all duration-200 text-base md:text-lg py-2 md:py-2.5"
                   placeholder="Search cars..."
                   value={search}
                   onChange={e => setSearch(e.target.value)}
+                  aria-label="Search cars"
                 />
               </div>
-              {/* Brand Dropdown */}
-              <Select value={brand} onValueChange={setBrand}>
-                <SelectTrigger className="min-w-[140px] bg-gradient-to-r from-blue-950/60 via-purple-950/60 to-gray-900/60 text-white border border-blue-800/60 shadow-md rounded-lg focus:ring-2 focus:ring-blue-500/60 focus:border-blue-400 transition-all duration-200 hover:ring-2 hover:ring-blue-400/60 group">
-                  <SelectValue placeholder="All Brands" className="text-blue-100 group-hover:text-blue-300" />
+              {/* Brand Filter */}
+              <Select value={brand} onValueChange={setBrand} aria-label="Brand">
+                <SelectTrigger className="min-w-[140px] bg-gradient-to-r from-blue-950/60 via-purple-950/60 to-gray-900/60 text-white border border-blue-800/60 shadow-md rounded-lg focus:ring-2 focus:ring-blue-500/60 focus:border-blue-400 text-base md:text-lg py-2 md:py-2.5">
+                  <SelectValue placeholder="Brand" />
                 </SelectTrigger>
-                <SelectContent className="bg-gradient-to-br from-blue-900/90 via-purple-900/90 to-gray-900/90 text-white border border-blue-800/60 shadow-xl rounded-xl animate-fade-in animate-duration-300">
+                <SelectContent>
                   <SelectItem value="all-brands">All Brands</SelectItem>
                   {uniqueBrands.map((b) => (
                     <SelectItem key={b} value={b}>{b}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {/* Location Dropdown */}
-              <Select value={location} onValueChange={setLocation}>
-                <SelectTrigger className="min-w-[140px] bg-gradient-to-r from-blue-950/60 via-purple-950/60 to-gray-900/60 text-white border border-blue-800/60 shadow-md rounded-lg focus:ring-2 focus:ring-blue-500/60 focus:border-blue-400 transition-all duration-200 hover:ring-2 hover:ring-blue-400/60 group">
-                  <SelectValue placeholder="All Locations" className="text-blue-100 group-hover:text-blue-300" />
+              {/* Location Filter */}
+              <Select value={location} onValueChange={setLocation} aria-label="Location">
+                <SelectTrigger className="min-w-[140px] bg-gradient-to-r from-blue-950/60 via-purple-950/60 to-gray-900/60 text-white border border-blue-800/60 shadow-md rounded-lg focus:ring-2 focus:ring-blue-500/60 focus:border-blue-400 text-base md:text-lg py-2 md:py-2.5">
+                  <SelectValue placeholder="Location" />
                 </SelectTrigger>
-                <SelectContent className="bg-gradient-to-br from-blue-900/90 via-purple-900/90 to-gray-900/90 text-white border border-blue-800/60 shadow-xl rounded-xl animate-fade-in animate-duration-300">
+                <SelectContent>
                   <SelectItem value="all-locations">All Locations</SelectItem>
                   {uniqueLocations.map((l) => (
                     <SelectItem key={l} value={l}>{l}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {/* Fuel Type Dropdown */}
-              <Select value={fuelType} onValueChange={setFuelType}>
-                <SelectTrigger className="min-w-[120px] bg-gradient-to-r from-blue-950/60 via-purple-950/60 to-gray-900/60 text-white border border-blue-800/60 shadow-md rounded-lg focus:ring-2 focus:ring-blue-500/60 focus:border-blue-400 transition-all duration-200 hover:ring-2 hover:ring-blue-400/60 group">
-                  <SelectValue placeholder="Fuel Type" className="text-blue-100 group-hover:text-blue-300" />
+              {/* Fuel Type Filter */}
+              <Select value={fuelType} onValueChange={setFuelType} aria-label="Fuel type">
+                <SelectTrigger className="min-w-[140px] bg-gradient-to-r from-blue-950/60 via-purple-950/60 to-gray-900/60 text-white border border-blue-800/60 shadow-md rounded-lg focus:ring-2 focus:ring-blue-500/60 focus:border-blue-400 text-base md:text-lg py-2 md:py-2.5">
+                  <SelectValue placeholder="Fuel Type" />
                 </SelectTrigger>
-                <SelectContent className="bg-gradient-to-br from-blue-900/90 via-purple-900/90 to-gray-900/90 text-white border border-blue-800/60 shadow-xl rounded-xl animate-fade-in animate-duration-300">
-                  <SelectItem value="all-fuel-types">All</SelectItem>
+                <SelectContent>
+                  <SelectItem value="all-fuel-types">All Fuel Types</SelectItem>
                   {uniqueFuelTypes.map((f) => (
                     <SelectItem key={f} value={f}>{f}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {/* Transmission Dropdown */}
-              <Select value={transmission} onValueChange={setTransmission}>
-                <SelectTrigger className="min-w-[120px] bg-gradient-to-r from-blue-950/60 via-purple-950/60 to-gray-900/60 text-white border border-blue-800/60 shadow-md rounded-lg focus:ring-2 focus:ring-blue-500/60 focus:border-blue-400 transition-all duration-200 hover:ring-2 hover:ring-blue-400/60 group">
-                  <SelectValue placeholder="Transmission" className="text-blue-100 group-hover:text-blue-300" />
+              {/* Transmission Filter */}
+              <Select value={transmission} onValueChange={setTransmission} aria-label="Transmission">
+                <SelectTrigger className="min-w-[140px] bg-gradient-to-r from-blue-950/60 via-purple-950/60 to-gray-900/60 text-white border border-blue-800/60 shadow-md rounded-lg focus:ring-2 focus:ring-blue-500/60 focus:border-blue-400 text-base md:text-lg py-2 md:py-2.5">
+                  <SelectValue placeholder="Transmission" />
                 </SelectTrigger>
-                <SelectContent className="bg-gradient-to-br from-blue-900/90 via-purple-900/90 to-gray-900/90 text-white border border-blue-800/60 shadow-xl rounded-xl animate-fade-in animate-duration-300">
-                  <SelectItem value="all-transmissions">All</SelectItem>
+                <SelectContent>
+                  <SelectItem value="all-transmissions">All Transmissions</SelectItem>
                   {uniqueTransmissions.map((t) => (
                     <SelectItem key={t} value={t}>{t}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {/* Availability Only Checkbox */}
+              <div className="flex items-center gap-2">
+                <Checkbox id="availability" checked={availabilityOnly} onCheckedChange={setAvailabilityOnly} aria-label="Available only" />
+                <label htmlFor="availability" className="text-blue-200 text-base md:text-lg cursor-pointer select-none">Available only</label>
+              </div>
               {/* Reset Button */}
-              <Button onClick={resetFilters} variant="outline" className="bg-white/90 text-blue-900 border border-blue-300 shadow hover:bg-blue-100 hover:text-blue-900 transition-all duration-200 flex items-center gap-2 px-5 py-2 rounded-lg">
+              <Button onClick={resetFilters} variant="outline" className="text-blue-400 border-blue-700/60 hover:bg-blue-900/40 text-base md:text-lg px-4 py-2 rounded-lg flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-blue-400">
                 <RotateCcw className="w-4 h-4" /> Reset
               </Button>
-              {/* Sort Dropdown */}
-              <Select value={sortOption} onValueChange={setSortOption}>
-                <SelectTrigger className="min-w-[120px] bg-gradient-to-r from-blue-950/60 via-purple-950/60 to-gray-900/60 text-white border border-blue-800/60 shadow-md rounded-lg focus:ring-2 focus:ring-blue-500/60 focus:border-blue-400 transition-all duration-200 hover:ring-2 hover:ring-blue-400/60 group">
-                  <SelectValue placeholder="Sort By" className="text-blue-100 group-hover:text-blue-300" />
-                </SelectTrigger>
-                <SelectContent className="bg-gradient-to-br from-blue-900/90 via-purple-900/90 to-gray-900/90 text-white border border-blue-800/60 shadow-xl rounded-xl animate-fade-in animate-duration-300">
-                  <SelectItem value="default">Default</SelectItem>
-                  <SelectItem value="priceLow">Price: Low to High</SelectItem>
-                  <SelectItem value="priceHigh">Price: High to Low</SelectItem>
-                  <SelectItem value="newest">Newest</SelectItem>
-                  <SelectItem value="highestRated">Highest Rated</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {/* Checkboxes */}
-            <div className="flex flex-wrap gap-6 mt-4">
-              <label className="flex items-center gap-2 cursor-pointer select-none text-white font-inter text-base">
-                <Checkbox checked={availabilityOnly} onCheckedChange={setAvailabilityOnly} className="scale-110 focus:ring-2 focus:ring-blue-500/60 border-blue-400 shadow-sm transition-all" />
-                Available Only
-              </label>
             </div>
           </CardContent>
         </Card>
@@ -284,135 +270,105 @@ const Cars = () => {
           </p>
         </div>
         {/* Cars Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mb-8">
           {currentCars.length === 0 ? (
             <div className="col-span-full text-center py-12">
-              <div className="text-blue-400 text-6xl mb-4">🚗</div>
-              <p className="text-blue-200 text-lg">No cars found matching your criteria</p>
+              <Car className="w-16 h-16 text-blue-400 mx-auto mb-4" />
+              <p className="text-blue-200">No cars found for the selected filters.</p>
             </div>
           ) : (
-            currentCars.map((car) => {
-              const rating = ratingsMap[car._id];
-              return (
-                <div key={car._id} className="group relative animate-fade-in">
-                  <Card className="overflow-hidden border-0 shadow-2xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 backdrop-blur-md rounded-2xl">
-                    <Link to={`/cars/${car._id}`}> 
-                      <div className="relative overflow-hidden">
-                        <img 
-                          src={car.image} 
-                          alt={car.name} 
-                          className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300 rounded-t-2xl" 
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-t-2xl" />
-                        {/* Availability Badge */}
-                        {car.availability && (
-                          <Badge className="absolute top-3 left-3 bg-green-500 hover:bg-green-600 text-white border-0 shadow-md">
-                            Available
-                          </Badge>
-                        )}
-                      </div>
-                      <CardContent className="p-6">
-                        <div className="flex justify-between items-start mb-3">
-                          <h3 className="font-bold text-xl font-playfair tracking-wide text-white group-hover:text-blue-400 transition-colors antialiased">
-                            {car.name}
-                          </h3>
-                        </div>
-                        {/* Rating */}
-                        <div className="mb-3">
-                          {rating ? (
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center">
-                                {Array.from({ length: 5 }).map((_, i) => (
-                                  <Star 
-                                    key={i} 
-                                    className={`w-4 h-4 ${i < Math.floor(rating.avg) ? 'text-yellow-400 fill-current' : 'text-blue-900/40'}`}
-                                  />
-                                ))}
-                              </div>
-                              <span className="text-sm text-blue-200">
-                                {rating.avg} ({rating.count} reviews)
-                              </span>
-                            </div>
-                          ) : (
-                            <p className="text-sm text-blue-400 flex items-center gap-1">
-                              <Star className="w-4 h-4" />
-                              No reviews yet
-                            </p>
-                          )}
-                        </div>
-                        {/* Car Details */}
-                        <div className="space-y-2 mb-4">
-                          <p className="text-sm text-blue-200 flex items-center gap-2">
-                            <TrendingUp className="w-4 h-4 text-blue-400" />
-                            {car.brand} • {car.modelYear}
-                          </p>
-                          <p className="text-sm text-blue-200 flex items-center gap-2">
-                            <Fuel className="w-4 h-4 text-green-400" />
-                            {car.fuelType}
-                          </p>
-                          <p className="text-sm text-blue-200 flex items-center gap-2">
-                            <Settings className="w-4 h-4 text-purple-400" />
-                            {car.transmission}
-                          </p>
-                          <p className="text-sm text-blue-200 flex items-center gap-2">
-                            <MapPin className="w-4 h-4 text-red-400" />
-                            {car.location}
-                          </p>
-                        </div>
-                        {/* Price */}
-                        <div className="bg-gradient-to-r from-blue-900/60 to-purple-900/60 rounded-lg p-3">
-                          <p className="text-2xl font-bold text-blue-300">
-                            ₹{car.pricePerDay}
-                            <span className="text-sm text-blue-200 font-normal"> / day</span>
-                          </p>
-                        </div>
-                      </CardContent>
+            currentCars.map((car) => (
+              <Card key={car._id} className="group hover:shadow-2xl transition-all duration-500 border-0 shadow-2xl overflow-hidden bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 backdrop-blur-md rounded-2xl hover:scale-105 hover:bg-gradient-to-tr hover:from-blue-800 hover:to-purple-800">
+                <CardContent className="p-0">
+                  <div className="relative overflow-hidden">
+                    <Link to={`/cars/${car._id}`} tabIndex={0} aria-label={`View details for ${car.name}`}> {/* Make image clickable */}
+                      <img
+                        src={car.images && car.images.length > 0 ? car.images[0] : ''}
+                        alt={car.name}
+                        className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-700 rounded-t-2xl"
+                        loading="lazy"
+                      />
                     </Link>
-                    {/* Wishlist Button */}
-                    {user && (
+                    <div className="absolute top-4 right-4 z-10">
                       <Button
-                        className="absolute top-3 right-3 p-2 rounded-full bg-blue-950/80 hover:bg-blue-900/90 shadow-md border-0 transition-all duration-200"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleWishlist(car._id);
-                        }}
+                        size="icon"
                         variant="ghost"
+                        aria-label={wishlistIds.includes(car._id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                        className={`rounded-full p-2 bg-white/20 hover:bg-pink-500/80 transition-all duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-pink-400 ${wishlistIds.includes(car._id) ? 'text-pink-500' : 'text-white'}`}
+                        onClick={() => handleWishlist(car._id)}
                       >
-                        <Heart 
-                          className={`w-5 h-5 transition-colors ${
-                            wishlistIds.includes(car._id) 
-                              ? 'text-red-500 fill-current' 
-                              : 'text-blue-300 hover:text-red-500'
-                          }`}
-                        />
+                        <Heart className={`w-6 h-6 ${wishlistIds.includes(car._id) ? 'fill-pink-500' : ''}`} />
                       </Button>
-                    )}
-                  </Card>
-                </div>
-              );
-            })
+                    </div>
+                    <div className="absolute bottom-4 left-4">
+                      <Badge className="bg-green-500 text-white backdrop-blur-sm animate-pulse shadow-md">
+                        {car.availability ? 'Available' : 'Unavailable'}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="p-4 md:p-6">
+                    <div className="flex justify-between items-start mb-2 md:mb-4">
+                      <div>
+                        <h3 className="text-lg md:text-xl font-bold font-playfair tracking-wide text-white group-hover:text-blue-400 transition-colors antialiased">
+                          {car.name}
+                        </h3>
+                        <p className="text-blue-200 font-medium text-sm md:text-base">{car.brand}</p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                          ₹{car.pricePerDay}
+                        </div>
+                        <div className="text-xs md:text-sm text-blue-300">per day</div>
+                      </div>
+                    </div>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs md:text-sm text-blue-300 mb-4 md:mb-6 gap-2 sm:gap-0">
+                      <div className="flex items-center">
+                        <Fuel className="w-4 h-4 mr-1 text-green-400" />
+                        {car.fuelType || 'Petrol'}
+                      </div>
+                      <div className="flex items-center">
+                        <MapPin className="w-4 h-4 mr-1 text-blue-400" />
+                        {car.location || 'Mumbai'}
+                      </div>
+                      <div className="flex items-center">
+                        <Settings className="w-4 h-4 mr-1 text-purple-400" />
+                        {car.transmission || 'Manual'}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Star className="w-4 h-4 text-yellow-400" />
+                      <span className="text-blue-200 font-semibold">
+                        {ratingsMap[car._id]?.avg || 'N/A'}
+                      </span>
+                      <span className="text-blue-300 text-xs">({ratingsMap[car._id]?.count || 0} reviews)</span>
+                    </div>
+                    <Button asChild className="w-full group/btn bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-800 hover:to-purple-800 text-white shadow-lg transition-all duration-300 mt-2">
+                      <Link to={`/cars/${car._id}`}>
+                        View Details
+                      </Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
           )}
         </div>
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex justify-center items-center gap-2 mt-12">
-            <div className="flex gap-2">
-              {Array.from({ length: totalPages }, (_, i) => (
-                <Button
-                  key={i}
-                  onClick={() => setCurrentPage(i + 1)}
-                  variant={currentPage === i + 1 ? "default" : "outline"}
-                  className={`w-10 h-10 rounded-full transition-all duration-200 ${
-                    currentPage === i + 1 
-                      ? 'bg-gradient-to-r from-blue-700 to-purple-700 text-white shadow-lg' 
-                      : 'bg-blue-950/60 text-blue-200 border-blue-800 hover:bg-blue-900/80'
-                  }`}
-                >
-                  {i + 1}
-                </Button>
-              ))}
-            </div>
+          <div className="flex flex-wrap justify-center items-center gap-2 md:gap-4 mb-8">
+            {Array.from({ length: totalPages }, (_, i) => (
+              <Button
+                key={i}
+                size="icon"
+                variant={currentPage === i + 1 ? "default" : "outline"}
+                className={`w-10 h-10 md:w-12 md:h-12 rounded-full text-lg font-bold flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-400 ${currentPage === i + 1 ? 'bg-blue-700 text-white' : 'bg-white/10 text-blue-200 hover:bg-blue-800/40'}`}
+                onClick={() => setCurrentPage(i + 1)}
+                aria-label={`Go to page ${i + 1}`}
+                aria-current={currentPage === i + 1 ? "page" : undefined}
+              >
+                {i + 1}
+              </Button>
+            ))}
           </div>
         )}
       </div>

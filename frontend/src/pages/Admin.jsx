@@ -36,7 +36,7 @@ const Admin = () => {
     description: "",
     location: "",
     pricePerDay: "",
-    image: "",
+    images: [], // now array
   });
 
   const [message, setMessage] = useState("");
@@ -49,17 +49,22 @@ const Admin = () => {
   const [selectedCarId, setSelectedCarId] = useState("");
   const [calendarDays, setCalendarDays] = useState(15);
 
+  // Helper to detect mobile
+  const isMobile = window.innerWidth < 768;
+
   useEffect(() => {
-    if (headerRef.current) {
-      gsap.fromTo(headerRef.current, { opacity: 0, y: -30 }, { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" });
+    if (!isMobile) {
+      if (headerRef.current) {
+        gsap.fromTo(headerRef.current, { opacity: 0, y: -30 }, { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" });
+      }
+      if (statsRef.current) {
+        gsap.fromTo(statsRef.current, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.8, delay: 0.2, ease: "power3.out" });
+      }
+      if (calendarRef.current) {
+        gsap.fromTo(calendarRef.current, { opacity: 0, scale: 0.98 }, { opacity: 1, scale: 1, duration: 0.8, delay: 0.4, ease: "power3.out" });
+      }
     }
-    if (statsRef.current) {
-      gsap.fromTo(statsRef.current, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.8, delay: 0.2, ease: "power3.out" });
-    }
-    if (calendarRef.current) {
-      gsap.fromTo(calendarRef.current, { opacity: 0, scale: 0.98 }, { opacity: 1, scale: 1, duration: 0.8, delay: 0.4, ease: "power3.out" });
-    }
-  }, [stats, cars]);
+  }, [stats, cars, isMobile]);
 
   useEffect(() => {
     if (user?.role === "admin") {
@@ -128,7 +133,7 @@ const Admin = () => {
       description: "",
       location: "",
       pricePerDay: "",
-      image: "",
+      images: [],
     });
     setIsEditing(false);
     setEditCarId(null);
@@ -141,7 +146,7 @@ const Admin = () => {
     if (!form.modelYear || isNaN(form.modelYear) || form.modelYear < 1900) return "Valid model year is required.";
     if (!form.location) return "Location is required.";
     if (!form.pricePerDay || isNaN(form.pricePerDay) || form.pricePerDay <= 0) return "Valid price per day is required.";
-    if (!isEditing && !form.image) return "Car image is required.";
+    if (!isEditing && !form.images.length) return "Car image is required.";
     return null;
   };
 
@@ -152,13 +157,19 @@ const Admin = () => {
       setMessage(validationError);
       return;
     }
-    setMessage("Uploading image...");
+    setMessage("Uploading images...");
 
     try {
-      const imageUrl = await uploadToImageKit(form.image);
+      // Upload all images and get URLs
+      const imageFiles = Array.from(form.images);
+      const imageUrls = [];
+      for (const file of imageFiles) {
+        const url = await uploadToImageKit(file);
+        imageUrls.push(url);
+      }
       const carData = {
         ...form,
-        image: imageUrl,
+        images: imageUrls,
         pricePerDay: Number(form.pricePerDay),
         modelYear: Number(form.modelYear),
         seats: Number(form.seats),
@@ -166,7 +177,6 @@ const Admin = () => {
         transmission: capitalize(form.transmission),
         features: form.features.split(",").map((f) => f.trim()),
       };
-
       await api.post("/cars", carData);
       setMessage("✅ Car added successfully.");
       resetForm();
@@ -183,7 +193,7 @@ const Admin = () => {
     setForm({
       ...car,
       features: car.features.join(", "),
-      image: car.image, // string URL
+      images: car.images || [], // array
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -196,16 +206,20 @@ const Admin = () => {
       return;
     }
     setMessage("Updating car...");
-
     try {
-      let imageUrl = form.image;
-      if (typeof form.image === "object") {
-        imageUrl = await uploadToImageKit(form.image);
+      let imageUrls = [];
+      // If new files are selected, upload them, else use existing URLs
+      if (form.images && form.images.length && typeof form.images[0] === "object") {
+        for (const file of form.images) {
+          if (typeof file === "string") imageUrls.push(file);
+          else imageUrls.push(await uploadToImageKit(file));
+        }
+      } else {
+        imageUrls = form.images;
       }
-
       const updatedCarData = {
         ...form,
-        image: imageUrl,
+        images: imageUrls,
         pricePerDay: Number(form.pricePerDay),
         modelYear: Number(form.modelYear),
         seats: Number(form.seats),
@@ -213,7 +227,6 @@ const Admin = () => {
         transmission: capitalize(form.transmission),
         features: form.features.split(",").map((f) => f.trim()),
       };
-
       await api.put(`/cars/${editCarId}`, updatedCarData);
       setMessage("✅ Car updated successfully.");
       resetForm();
@@ -413,16 +426,30 @@ const Admin = () => {
             <input name="location" placeholder="Location" value={form.location} onChange={handleChange} required className="bg-gray-900/60 text-white placeholder:text-blue-200 rounded-xl p-2" />
             <input name="pricePerDay" type="number" placeholder="Price Per Day" value={form.pricePerDay} onChange={handleChange} required className="bg-gray-900/60 text-white placeholder:text-blue-200 rounded-xl p-2" />
 
+            <label htmlFor="car-images" className="col-span-2 text-blue-200 font-medium">Car Images <span className="text-xs text-blue-400">(You can select multiple images)</span></label>
             <input
+              id="car-images"
               type="file"
               accept="image/*"
-              onChange={(e) => setForm({ ...form, image: e.target.files[0] })}
+              multiple
+              onChange={(e) => setForm({ ...form, images: e.target.files })}
               {...(!isEditing && { required: true })}
               className="col-span-2 bg-gray-900/60 text-white rounded-xl p-2"
             />
+            <span className="col-span-2 text-xs text-blue-400 mb-2">Hold Ctrl (Windows) or Cmd (Mac) to select multiple images.</span>
 
-            {form.image && typeof form.image === "object" && (
-              <img src={URL.createObjectURL(form.image)} alt="Preview" className="col-span-2 h-40 object-cover rounded-xl" />
+            {/* Preview selected images */}
+            {form.images && form.images.length > 0 && (
+              <div className="col-span-2 flex gap-2 flex-wrap">
+                {Array.from(form.images).map((img, idx) => (
+                  <img
+                    key={idx}
+                    src={typeof img === "string" ? img : URL.createObjectURL(img)}
+                    alt={`Preview ${idx + 1}`}
+                    className="h-24 object-cover rounded-xl border border-blue-800/30 shadow"
+                  />
+                ))}
+              </div>
             )}
 
             <Button type="submit" className="col-span-2 bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition-all duration-300 hover:scale-105">
@@ -443,8 +470,8 @@ const Admin = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {cars.map((car) => (
               <div key={car._id} className="relative group rounded-2xl bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 shadow-xl p-4 flex flex-col gap-2 hover:scale-[1.03] transition-all duration-300 border border-blue-800/40 animate-fade-in">
-                {car.image && (
-                  <img src={car.image} alt={car.name} className="w-full h-32 object-cover rounded-xl mb-2 border border-blue-800/30 shadow" />
+                {car.images && car.images.length > 0 && (
+                  <img src={car.images[0]} alt={car.name} className="w-full h-32 object-cover rounded-xl mb-2 border border-blue-800/30 shadow" />
                 )}
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">

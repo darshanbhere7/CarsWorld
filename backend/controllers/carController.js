@@ -17,7 +17,7 @@ const addCar = async (req, res) => {
       transmission,
       pricePerDay,
       location,
-      image,
+      images, // now array
       engine,
       seats,
       mileage,
@@ -37,7 +37,7 @@ const addCar = async (req, res) => {
       transmission: formattedTransmission,
       pricePerDay: Number(pricePerDay),
       location,
-      image,
+      images, // now array
       engine,
       seats,
       mileage,

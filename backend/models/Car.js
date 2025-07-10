@@ -23,9 +23,10 @@ const carSchema = new mongoose.Schema({
   description: { type: String },             // ✅ New
   pricePerDay: { type: Number, required: true },
   location: { type: String, required: true },
-  image: { type: String, required: true },
+  images: [{ type: String, required: true }],
   availability: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now },
 });
 
+// NOTE: Migration needed for existing cars: { image: '...' } => { images: ['...'] }
 module.exports = mongoose.model("Car", carSchema);

@@ -26,6 +26,9 @@ const Dashboard = () => {
   const headerRef = useRef(null);
   const bookingsRef = useRef(null);
 
+  // Helper to detect mobile
+  const isMobile = window.innerWidth < 768;
+
   const fetchBookings = async () => {
     try {
       const res = await api.get("/bookings/my");
@@ -56,9 +59,11 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
-    gsap.fromTo(headerRef.current, { opacity: 0, y: -30 }, { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" });
-    gsap.fromTo(bookingsRef.current, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.8, delay: 0.2, ease: "power3.out" });
-  }, []);
+    if (!isMobile) {
+      gsap.fromTo(headerRef.current, { opacity: 0, y: -30 }, { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" });
+      gsap.fromTo(bookingsRef.current, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.8, delay: 0.2, ease: "power3.out" });
+    }
+  }, [isMobile]);
 
   const handleCancel = async (id) => {
     setCancellingId(id);
@@ -120,10 +125,10 @@ const Dashboard = () => {
     // Animation ref for each card
     const cardRef = useRef(null);
     useEffect(() => {
-      if (cardRef.current) {
+      if (!isMobile && cardRef.current) {
         gsap.fromTo(cardRef.current, { opacity: 0, y: 40, scale: 0.98 }, { opacity: 1, y: 0, scale: 1, duration: 0.7, delay: 0.1 * index, ease: "power2.out" });
       }
-    }, [index]);
+    }, [index, isMobile]);
 
     const openReviewForm = () => {
       setActiveReviewBookingId(booking._id);
@@ -162,10 +167,10 @@ const Dashboard = () => {
         <CardContent className="p-0">
           <div className="flex flex-col lg:flex-row">
             {/* Car Image Section */}
-            <div className="relative lg:w-80 h-48 lg:h-auto overflow-hidden">
-              {booking.car?.image ? (
+            <div className="relative w-full lg:w-80 h-48 lg:h-auto overflow-hidden flex-shrink-0">
+              {booking.car?.images && booking.car.images.length > 0 ? (
                 <img
-                  src={booking.car.image}
+                  src={booking.car.images[0]}
                   alt={booking.car.name}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 rounded-t-2xl lg:rounded-l-2xl lg:rounded-tr-none"
                 />
@@ -191,11 +196,11 @@ const Dashboard = () => {
             </div>
 
             {/* Content Section */}
-            <div className="flex-1 p-6">
-              <div className="space-y-4">
+            <div className="flex-1 p-4 md:p-6 flex flex-col gap-2 md:gap-4">
+              <div className="space-y-2 md:space-y-4">
                 {/* Header */}
                 <div>
-                  <h3 className="text-xl font-bold font-playfair tracking-wide text-white mb-1 group-hover:text-blue-400 transition-colors antialiased">
+                  <h3 className="text-lg md:text-xl font-bold font-playfair tracking-wide text-white mb-1 group-hover:text-blue-400 transition-colors antialiased">
                     {booking.car?.name || "Unknown Car"}
                   </h3>
                   <p className="text-sm text-blue-200 flex items-center gap-2">

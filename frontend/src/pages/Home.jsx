@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useState, useRef } from "react";
+import React, { useEffect, useLayoutEffect, useState, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
@@ -198,21 +198,14 @@ const Home = () => {
     }
   ];
 
-  const displayCars = featuredCars.length > 0 ? featuredCars : mockCars;
+  const displayCars = useMemo(() => (featuredCars.length > 0 ? featuredCars : mockCars), [featuredCars]);
 
-  const renderStars = (rating) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      <Star
-        key={i}
-        className={`w-4 h-4 ${
-          i < rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
-        }`}
-      />
-    ));
-  };
+  // Helper to detect mobile
+  const isMobile = window.innerWidth < 768;
 
-  // Replace useEffect for GSAP with useLayoutEffect and batch logic
+  // Reduce GSAP animation on mobile
   useLayoutEffect(() => {
+    if (isMobile) return; // Skip heavy animations on mobile
     // Set initial state for all animated elements
     if (featuredRef.current) {
       gsap.set(featuredRef.current, { opacity: 0, y: 60 });
@@ -276,6 +269,17 @@ const Home = () => {
     };
   }, []);
 
+  const renderStars = (rating) => {
+    return Array.from({ length: 5 }, (_, i) => (
+      <Star
+        key={i}
+        className={`w-4 h-4 ${
+          i < rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
+        }`}
+      />
+    ));
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-950 via-purple-950 to-gray-900 relative overflow-x-hidden scrollbar-hide">
       {/* Animated Gradient Background */}
@@ -305,7 +309,7 @@ const Home = () => {
             <Sparkles className="w-4 h-4 mr-2 text-yellow-400" />
             India's Premier Car Rental Service
           </Badge>
-          <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold font-playfair tracking-tight text-white leading-tight antialiased mb-2 whitespace-nowrap">
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold font-playfair tracking-tight text-white leading-tight antialiased mb-2">
             Rent Your <span className="bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 bg-clip-text text-transparent inline">Dream Car</span> Today
           </h1>
           <p className="text-lg md:text-xl text-white/90 max-w-2xl leading-relaxed mb-4">
@@ -329,7 +333,7 @@ const Home = () => {
             )}
           </div>
           {/* Stats Row */}
-          <div ref={statsRef} className="grid grid-cols-2 md:grid-cols-4 gap-6 w-full max-w-2xl mt-2">
+          <div ref={statsRef} className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full max-w-2xl mt-2">
             {stats.map((stat, index) => (
               <div key={index} className="flex flex-col items-center group">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-white/20 backdrop-blur-md border border-white/30 mb-2 group-hover:scale-110 transition-transform duration-300">
@@ -367,23 +371,23 @@ const Home = () => {
         </Swiper>
       </div> */}
       {/* Featured Cars Section - remove extra gap, add ref for GSAP */}
-      <section ref={featuredRef} className="py-16 md:py-20 px-4 -mt-8" id="featured-cars">
+      <section ref={featuredRef} className="py-10 md:py-20 px-2 sm:px-4 -mt-8" id="featured-cars">
         <div className="max-w-7xl mx-auto">
           {/* Section Header */}
-          <div className="section-header text-center mb-16 transition-all duration-1000 transform translate-y-0 opacity-100">
+          <div className="section-header text-center mb-10 md:mb-16 transition-all duration-1000 transform translate-y-0 opacity-100">
             <Badge className="mb-4 bg-gradient-to-r from-blue-700 to-purple-700 text-white border-none shadow-lg">
               Featured Collection
             </Badge>
-            <h2 className="text-4xl md:text-5xl font-bold font-playfair tracking-wide text-white mb-6 drop-shadow-lg antialiased">
+            <h2 className="text-3xl md:text-5xl font-bold font-playfair tracking-wide text-white mb-4 md:mb-6 drop-shadow-lg antialiased">
               Our Premium Fleet
             </h2>
-            <p className="text-xl text-blue-200 max-w-3xl mx-auto">
+            <p className="text-lg md:text-xl text-blue-200 max-w-3xl mx-auto">
               Discover our carefully curated selection of premium vehicles, from economy to luxury cars.
             </p>
           </div>
 
           {/* Cars Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mb-8 md:mb-12">
             {loading ? (
               [...Array(6)].map((_, index) => (
                 <Card key={index} className="car-card animate-pulse border-0 shadow-2xl bg-gradient-to-br from-blue-900/60 via-purple-900/60 to-gray-900/60 backdrop-blur-md rounded-2xl">
@@ -407,12 +411,15 @@ const Home = () => {
                 <Card key={car._id || index} className="car-card group hover:shadow-2xl transition-all duration-500 border-0 shadow-2xl overflow-hidden bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 backdrop-blur-md rounded-2xl hover:scale-105 hover:bg-gradient-to-tr hover:from-blue-800 hover:to-purple-800">
                   <CardContent className="p-0">
                     <div className="relative overflow-hidden">
-                      <img 
-                        src={car.image}
-                        alt={car.name}
-                        className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-700 rounded-t-2xl"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-t-2xl" />
+                      <Link to={`/cars/${car._id}`} tabIndex={0} aria-label={`View details for ${car.name}`}> {/* Make image clickable */}
+                        <img 
+                          src={car.images && car.images.length > 0 ? car.images[0] : ''}
+                          alt={car.name}
+                          className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-700 rounded-t-2xl"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-t-2xl" />
+                      </Link>
                       <div className="absolute top-4 right-4">
                         <Badge className="bg-green-500 text-white backdrop-blur-sm animate-pulse shadow-md">
                           <CheckCircle className="w-3 h-3 mr-1" />
@@ -429,19 +436,19 @@ const Home = () => {
                     <div className="p-6">
                       <div className="flex justify-between items-start mb-4">
                         <div>
-                          <h3 className="text-xl font-bold font-playfair tracking-wide text-white group-hover:text-blue-400 transition-colors antialiased">
+                          <h3 className="text-lg md:text-xl font-bold font-playfair tracking-wide text-white group-hover:text-blue-400 transition-colors antialiased">
                             {car.name}
                           </h3>
                           <p className="text-blue-200 font-medium">{car.brand}</p>
                         </div>
                         <div className="text-right">
-                          <div className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                          <div className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                             ₹{car.pricePerDay}
                           </div>
                           <div className="text-sm text-blue-300">per day</div>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between text-sm text-blue-300 mb-6">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-sm text-blue-300 mb-6 gap-2 sm:gap-0">
                         <div className="flex items-center">
                           <Fuel className="w-4 h-4 mr-1 text-green-400" />
                           {car.fuelType || 'Petrol'}
@@ -482,31 +489,31 @@ const Home = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-4 bg-gradient-to-br from-blue-950 via-purple-950 to-gray-900/80 backdrop-blur-md" id="features">
+      <section className="py-10 md:py-20 px-2 sm:px-4 bg-gradient-to-br from-blue-950 via-purple-950 to-gray-900/80 backdrop-blur-md" id="features">
         <div className="max-w-7xl mx-auto">
-          <div className="section-header text-center mb-16 transition-all duration-1000 transform translate-y-0 opacity-100">
+          <div className="section-header text-center mb-10 md:mb-16 transition-all duration-1000 transform translate-y-0 opacity-100">
             <Badge className="mb-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white border-none shadow-lg">
               Why Choose Us
             </Badge>
-            <h2 className="text-4xl md:text-5xl font-bold font-playfair tracking-wide text-white mb-6 drop-shadow-lg antialiased">
+            <h2 className="text-3xl md:text-5xl font-bold font-playfair tracking-wide text-white mb-4 md:mb-6 drop-shadow-lg antialiased">
               Experience the Difference
             </h2>
-            <p className="text-xl text-blue-200 max-w-3xl mx-auto">
+            <p className="text-lg md:text-xl text-blue-200 max-w-3xl mx-auto">
               We provide more than just car rental. We offer a complete mobility solution with premium service.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
             {features.map((feature, index) => (
               <Card key={index} className="feature-card text-center group hover:shadow-2xl transition-all duration-500 border-0 bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 backdrop-blur-md rounded-2xl hover:scale-105 hover:bg-gradient-to-tr hover:from-blue-800 hover:to-purple-800">
-                <CardContent className="p-8">
-                  <div className={`w-20 h-20 mx-auto mb-6 bg-gradient-to-r ${feature.color} rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-lg`}>
-                    <feature.icon className="w-10 h-10 text-white" />
+                <CardContent className="p-6 md:p-8">
+                  <div className={`w-16 h-16 md:w-20 md:h-20 mx-auto mb-4 md:mb-6 bg-gradient-to-r ${feature.color} rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-lg`}>
+                    <feature.icon className="w-8 h-8 md:w-10 md:h-10 text-white" />
                   </div>
-                  <h3 className="text-xl font-bold font-playfair tracking-wide text-white mb-3 group-hover:text-blue-400 transition-colors antialiased">
+                  <h3 className="text-lg md:text-xl font-bold font-playfair tracking-wide text-white mb-2 md:mb-3 group-hover:text-blue-400 transition-colors antialiased">
                     {feature.title}
                   </h3>
-                  <p className="text-blue-200 leading-relaxed">{feature.description}</p>
+                  <p className="text-blue-200 leading-relaxed text-base md:text-lg">{feature.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -515,40 +522,40 @@ const Home = () => {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-20 px-4" id="testimonials">
+      <section className="py-10 md:py-20 px-2 sm:px-4" id="testimonials">
         <div className="max-w-7xl mx-auto">
-          <div className="section-header text-center mb-16 transition-all duration-1000 transform translate-y-0 opacity-100">
+          <div className="section-header text-center mb-10 md:mb-16 transition-all duration-1000 transform translate-y-0 opacity-100">
             <Badge className="mb-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white border-none shadow-lg">
               Testimonials
             </Badge>
-            <h2 className="text-4xl md:text-5xl font-bold font-playfair tracking-wide text-white mb-6 drop-shadow-lg antialiased">
+            <h2 className="text-3xl md:text-5xl font-bold font-playfair tracking-wide text-white mb-4 md:mb-6 drop-shadow-lg antialiased">
               What Our Customers Say
             </h2>
-            <p className="text-xl text-blue-200 max-w-3xl mx-auto">
+            <p className="text-lg md:text-xl text-blue-200 max-w-3xl mx-auto">
               Don't just take our word for it. Here's what our satisfied customers have to say.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
             {testimonials.map((testimonial, index) => (
               <Card key={index} className="testimonial-card border-0 shadow-2xl bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 backdrop-blur-md rounded-2xl hover:scale-105 hover:bg-gradient-to-tr hover:from-purple-800 hover:to-pink-800">
-                <CardContent className="p-8">
-                  <div className="flex items-center mb-6">
+                <CardContent className="p-6 md:p-8">
+                  <div className="flex items-center mb-4 md:mb-6">
                     {renderStars(testimonial.rating)}
                   </div>
-                  <blockquote className="text-blue-200 mb-6 italic text-lg leading-relaxed">
+                  <blockquote className="text-blue-200 mb-4 md:mb-6 italic text-base md:text-lg leading-relaxed">
                     "{testimonial.text}"
                   </blockquote>
                   <div className="flex items-center">
-                    <Avatar className="w-14 h-14 mr-4 ring-2 ring-blue-500/20">
+                    <Avatar className="w-12 h-12 md:w-14 md:h-14 mr-3 md:mr-4 ring-2 ring-blue-500/20">
                       <AvatarImage src={testimonial.image} alt={testimonial.name} />
                       <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500 text-white">
                         {testimonial.name.split(' ').map(n => n[0]).join('')}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <div className="font-semibold text-white text-lg">{testimonial.name}</div>
-                      <div className="text-blue-300">{testimonial.role}</div>
+                      <div className="font-semibold text-white text-base md:text-lg">{testimonial.name}</div>
+                      <div className="text-blue-300 text-sm md:text-base">{testimonial.role}</div>
                     </div>
                   </div>
                 </CardContent>
@@ -559,7 +566,7 @@ const Home = () => {
       </section>
 
       {/* CTA Section */}
-      <section id="cta-section" className="py-20 px-4 bg-gradient-to-br from-blue-950 via-purple-950 to-gray-900 relative overflow-hidden animate-fade-in-up">
+      <section id="cta-section" className="py-10 md:py-20 px-2 sm:px-4 bg-gradient-to-br from-blue-950 via-purple-950 to-gray-900 relative overflow-hidden animate-fade-in-up">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10 pointer-events-none select-none">
           <div className="absolute inset-0" style={{

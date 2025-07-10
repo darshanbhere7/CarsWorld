@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, memo, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 // Remove: import { useTheme } from "../context/ThemeContext";
@@ -32,6 +32,44 @@ import {
 } from "lucide-react";
 import navbarLogo from "../assets/navbarlogo.png";
 
+// Memoized NavLink for performance
+const NavLink = memo(({ to, children, icon: Icon, onClick }) => {
+  const location = useLocation();
+  const isActive = location.pathname === to;
+  return (
+    <Link
+      to={to}
+      onClick={onClick}
+      className={`
+        relative group flex items-center space-x-2 px-4 py-3 rounded-lg
+        font-medium tracking-wide transition-all duration-300
+        ${isActive 
+          ? "text-white bg-gradient-to-r from-blue-700/60 to-purple-700/60 shadow-lg scale-105"
+          : "text-blue-200 hover:text-white hover:bg-blue-800/30"
+        }
+        hover:scale-110 hover:-translate-y-1 hover:shadow-xl
+        after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:h-0.5 after:w-0 after:bg-gradient-to-r after:from-blue-400 after:to-purple-400 after:rounded-full
+        after:transition-all after:duration-500 after:ease-out
+        ${isActive ? 'after:w-3/4 after:opacity-100' : 'group-hover:after:w-1/2 group-hover:after:opacity-80'}
+      `}
+      tabIndex={0}
+      aria-current={isActive ? "page" : undefined}
+    >
+      {Icon && (
+        <Icon 
+          size={20} 
+          className={`
+            transition-all duration-500 ease-out
+            ${isActive ? 'text-blue-300 scale-110' : 'group-hover:text-blue-400'}
+            group-hover:rotate-6 group-hover:scale-110
+          `} 
+        />
+      )}
+      <span className="text-base md:text-sm lg:text-base">{children}</span>
+    </Link>
+  );
+});
+
 const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -39,6 +77,7 @@ const Navbar = () => {
   // Remove: const { theme, toggleTheme } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const mobileMenuRef = useRef(null);
 
   // Handle scroll effect
   useEffect(() => {
@@ -58,42 +97,16 @@ const Navbar = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
-  const NavLink = ({ to, children, icon: Icon, onClick }) => {
-    const isActive = location.pathname === to;
-    
-    return (
-      <Link
-        to={to}
-        onClick={onClick}
-        className={`
-          relative group flex items-center space-x-2 px-4 py-2 rounded-lg
-          font-medium tracking-wide transition-all duration-300
-          ${isActive 
-            ? "text-white bg-gradient-to-r from-blue-700/60 to-purple-700/60 shadow-lg scale-105"
-            : "text-blue-200 hover:text-white hover:bg-blue-800/30"
-          }
-          hover:scale-110 hover:-translate-y-1 hover:shadow-xl
-          after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:h-0.5 after:w-0 after:bg-gradient-to-r after:from-blue-400 after:to-purple-400 after:rounded-full
-          after:transition-all after:duration-500 after:ease-out
-          ${isActive ? 'after:w-3/4 after:opacity-100' : 'group-hover:after:w-1/2 group-hover:after:opacity-80'}
-        `}
-      >
-        {Icon && (
-          <Icon 
-            size={18} 
-            className={`
-              transition-all duration-500 ease-out
-              ${isActive ? 'text-blue-300 scale-110' : 'group-hover:text-blue-400'}
-              group-hover:rotate-6 group-hover:scale-110
-            `} 
-          />
-        )}
-        <span>{children}</span>
-      </Link>
-    );
+  // Keyboard accessibility for mobile menu toggle
+  const handleMobileMenuKeyDown = (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      toggleMobileMenu();
+    }
+    if (e.key === "Escape" && isMobileMenuOpen) {
+      setIsMobileMenuOpen(false);
+    }
   };
-
-
 
   return (
     <>
@@ -192,11 +205,14 @@ const Navbar = () => {
         `
       }} />
 
-      <nav className={`
-        fixed top-0 left-0 right-0 z-50 transition-all duration-700 ease-out
-        bg-gradient-to-br from-blue-950 via-purple-950 to-gray-900 shadow-xl border-b border-blue-900/60
-      `}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <nav
+        aria-label="Main navigation"
+        className={`
+          fixed top-0 left-0 right-0 z-50 transition-all duration-700 ease-out
+          bg-gradient-to-br from-blue-950 via-purple-950 to-gray-900 shadow-xl border-b border-blue-900/60
+        `}
+      >
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
           <div className="flex justify-between items-center h-14">
             
             {/* Logo */}
@@ -342,14 +358,18 @@ const Navbar = () => {
               <Button
                 variant="ghost"
                 size="sm"
+                aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+                aria-expanded={isMobileMenuOpen}
+                aria-controls="mobile-menu"
                 onClick={toggleMobileMenu}
-                className="md:hidden h-10 w-10 rounded-full hover:scale-110 transition-all duration-300"
+                onKeyDown={handleMobileMenuKeyDown}
+                className="md:hidden h-12 w-12 rounded-full hover:scale-110 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <div className="relative">
                   {isMobileMenuOpen ? (
-                    <X size={20} className="transition-all duration-300 rotate-90" />
+                    <X size={24} className="transition-all duration-300 rotate-90" />
                   ) : (
-                    <Menu size={20} className="transition-all duration-300" />
+                    <Menu size={24} className="transition-all duration-300" />
                   )}
                 </div>
               </Button>
@@ -357,13 +377,18 @@ const Navbar = () => {
           </div>
 
           {/* Mobile Menu */}
-          <div className={`
-            md:hidden overflow-hidden transition-all duration-500 ease-out
-            ${isMobileMenuOpen 
-              ? "max-h-screen opacity-100 pb-6" 
-              : "max-h-0 opacity-0"
-            }
-          `}>
+          <div
+            id="mobile-menu"
+            ref={mobileMenuRef}
+            className={`
+              md:hidden overflow-hidden transition-all duration-500 ease-out
+              ${isMobileMenuOpen 
+                ? "max-h-[600px] opacity-100 pb-6" 
+                : "max-h-0 opacity-0"
+              }
+            `}
+            aria-hidden={!isMobileMenuOpen}
+          >
             <div className="px-2 pt-4 pb-3 space-y-2">
               
               {/* Mobile Navigation Links */}
@@ -381,14 +406,14 @@ const Navbar = () => {
                 <>
                   <div className="border-t border-gray-200 my-4 pt-4">
                     <div className="flex items-center space-x-3 px-3 py-2 mb-3">
-                      <Avatar className="h-8 w-8">
+                      <Avatar className="h-10 w-10">
                         <AvatarImage src={user.avatar} alt={user.name} />
-                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xs">
+                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-base">
                           {user.name?.charAt(0) || user.email?.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="text-sm font-medium">{user.name || user.email}</p>
+                        <p className="text-base font-medium">{user.name || user.email}</p>
                         <p className="text-xs text-muted-foreground">{user.email}</p>
                       </div>
                     </div>
@@ -412,9 +437,9 @@ const Navbar = () => {
                         handleLogout();
                         setIsMobileMenuOpen(false);
                       }}
-                      className="w-full text-left px-4 py-2.5 text-red-600 hover:bg-red-50 rounded-xl transition-all duration-300 flex items-center space-x-3 group"
+                      className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-all duration-300 flex items-center space-x-3 group text-base"
                     >
-                      <LogOut size={18} className="group-hover:scale-110 transition-transform" />
+                      <LogOut size={20} className="group-hover:scale-110 transition-transform" />
                       <span className="font-medium">Logout</span>
                     </button>
                   </div>
@@ -424,14 +449,14 @@ const Navbar = () => {
                   <Button 
                     variant="ghost" 
                     asChild 
-                    className="w-full justify-start h-12 rounded-xl"
+                    className="w-full justify-start h-14 rounded-xl text-base"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <Link to="/login" className="font-medium">Login</Link>
                   </Button>
                   <Button 
                     asChild 
-                    className="w-full h-12 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl"
+                    className="w-full h-14 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl text-base"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <Link to="/register" className="font-medium">Register</Link>
