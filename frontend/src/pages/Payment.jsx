@@ -139,7 +139,7 @@ const Payment = () => {
           <div className="bg-gradient-to-br from-purple-900/60 via-pink-900/60 to-gray-900/60 p-4 sm:p-6 rounded-xl shadow flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-0">
             <span className="text-lg sm:text-xl font-bold text-purple-200">Total Amount</span>
             <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-              9{bookingData.totalPrice}
+              {bookingData.totalPrice}
             </div>
           </div>
 
