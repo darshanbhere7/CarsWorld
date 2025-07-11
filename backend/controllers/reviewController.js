@@ -1,6 +1,14 @@
 // controllers/reviewController.js
+const Car = require("../models/Car");
 const Review = require("../models/Review");
 const Booking = require("../models/Booking");
+
+async function updateCarRating(carId) {
+  const reviews = await Review.find({ car: carId });
+  const reviewCount = reviews.length;
+  const avgRating = reviewCount ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount) : 0;
+  await Car.findByIdAndUpdate(carId, { avgRating, reviewCount });
+}
 
 // 🔘 Create or update review
 const addReview = async (req, res) => {
@@ -24,11 +32,13 @@ const addReview = async (req, res) => {
       review.rating = rating;
       review.comment = comment;
       await review.save();
+      await updateCarRating(carId);
       return res.status(200).json({ message: "Review updated", review });
     }
 
     review = new Review({ car: carId, user: userId, rating, comment });
     await review.save();
+    await updateCarRating(carId);
 
     res.status(201).json({ message: "Review added", review });
   } catch (err) {
@@ -78,6 +88,7 @@ const deleteReview = async (req, res) => {
     }
 
     await Review.deleteOne({ _id: req.params.id });
+    await updateCarRating(review.car);
     res.status(200).json({ message: "Review deleted" });
   } catch (err) {
     console.error("Error deleting review:", err);

@@ -34,7 +34,11 @@ gsap.registerPlugin(ScrollTrigger);
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Stage, useGLTF } from '@react-three/drei';
 import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Pagination, Autoplay, EffectFade } from 'swiper/modules';
 import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
+import 'swiper/css/effect-fade';
 
 const testimonials = [
   {
@@ -141,7 +145,10 @@ const Home = () => {
       name: "BMW X5",
       brand: "BMW",
       pricePerDay: 5000,
-      image: "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=400&h=250&fit=crop",
+      images: [
+        "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=400&h=250&fit=crop",
+        "https://images.unsplash.com/photo-1511918984145-48de785d4c4e?w=400&h=250&fit=crop"
+      ],
       fuelType: "Petrol",
       seats: 5,
       location: "Mumbai"
@@ -151,7 +158,10 @@ const Home = () => {
       name: "Mercedes C-Class",
       brand: "Mercedes",
       pricePerDay: 4500,
-      image: "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=400&h=250&fit=crop",
+      images: [
+        "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=400&h=250&fit=crop",
+        "https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?w=400&h=250&fit=crop"
+      ],
       fuelType: "Diesel",
       seats: 5,
       location: "Delhi"
@@ -161,7 +171,10 @@ const Home = () => {
       name: "Audi A4",
       brand: "Audi",
       pricePerDay: 4000,
-      image: "https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=400&h=250&fit=crop",
+      images: [
+        "https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=400&h=250&fit=crop",
+        "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=400&h=250&fit=crop"
+      ],
       fuelType: "Petrol",
       seats: 5,
       location: "Bangalore"
@@ -171,7 +184,9 @@ const Home = () => {
       name: "Toyota Camry",
       brand: "Toyota",
       pricePerDay: 3000,
-      image: "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=400&h=250&fit=crop",
+      images: [
+        "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=400&h=250&fit=crop"
+      ],
       fuelType: "Hybrid",
       seats: 5,
       location: "Chennai"
@@ -181,7 +196,9 @@ const Home = () => {
       name: "Honda City",
       brand: "Honda",
       pricePerDay: 2000,
-      image: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=400&h=250&fit=crop",
+      images: [
+        "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=400&h=250&fit=crop"
+      ],
       fuelType: "Petrol",
       seats: 5,
       location: "Pune"
@@ -191,7 +208,9 @@ const Home = () => {
       name: "Maruti Swift",
       brand: "Maruti",
       pricePerDay: 1500,
-      image: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400&h=250&fit=crop",
+      images: [
+        "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400&h=250&fit=crop"
+      ],
       fuelType: "Petrol",
       seats: 5,
       location: "Hyderabad"
@@ -412,12 +431,36 @@ const Home = () => {
                   <CardContent className="p-0">
                     <div className="relative overflow-hidden">
                       <Link to={`/cars/${car._id}`} tabIndex={0} aria-label={`View details for ${car.name}`}> {/* Make image clickable */}
-                        <img 
-                          src={car.images && car.images.length > 0 ? car.images[0] : ''}
-                          alt={car.name}
-                          className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-700 rounded-t-2xl"
-                          loading="lazy"
-                        />
+                        {car.images && car.images.length > 1 ? (
+                          <Swiper
+                            spaceBetween={0}
+                            slidesPerView={1}
+                            loop={true}
+                            pagination={{ clickable: true, dynamicBullets: true }}
+                            navigation={true}
+                            effect="fade"
+                            modules={[Navigation, Pagination, EffectFade]}
+                            className="w-full h-64 rounded-t-2xl"
+                          >
+                            {car.images.map((img, idx) => (
+                              <SwiperSlide key={idx}>
+                                <img
+                                  src={img}
+                                  alt={`${car.name} image ${idx + 1}`}
+                                  className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-700 rounded-t-2xl"
+                                  loading="lazy"
+                                />
+                              </SwiperSlide>
+                            ))}
+                          </Swiper>
+                        ) : (
+                          <img
+                            src={car.images && car.images.length > 0 ? car.images[0] : ''}
+                            alt={car.name}
+                            className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-700 rounded-t-2xl"
+                            loading="lazy"
+                          />
+                        )}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-t-2xl" />
                       </Link>
                       <div className="absolute top-4 right-4">

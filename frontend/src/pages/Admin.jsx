@@ -38,6 +38,7 @@ const Admin = () => {
     pricePerDay: "",
     images: [], // now array
   });
+  const [imageInput, setImageInput] = useState(null); // for single file input
 
   const [message, setMessage] = useState("");
 
@@ -426,31 +427,52 @@ const Admin = () => {
             <input name="location" placeholder="Location" value={form.location} onChange={handleChange} required className="bg-gray-900/60 text-white placeholder:text-blue-200 rounded-xl p-2" />
             <input name="pricePerDay" type="number" placeholder="Price Per Day" value={form.pricePerDay} onChange={handleChange} required className="bg-gray-900/60 text-white placeholder:text-blue-200 rounded-xl p-2" />
 
-            <label htmlFor="car-images" className="col-span-2 text-blue-200 font-medium">Car Images <span className="text-xs text-blue-400">(You can select multiple images)</span></label>
-            <input
-              id="car-images"
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={(e) => setForm({ ...form, images: e.target.files })}
-              {...(!isEditing && { required: true })}
-              className="col-span-2 bg-gray-900/60 text-white rounded-xl p-2"
-            />
-            <span className="col-span-2 text-xs text-blue-400 mb-2">Hold Ctrl (Windows) or Cmd (Mac) to select multiple images.</span>
-
-            {/* Preview selected images */}
-            {form.images && form.images.length > 0 && (
-              <div className="col-span-2 flex gap-2 flex-wrap">
-                {Array.from(form.images).map((img, idx) => (
-                  <img
-                    key={idx}
-                    src={typeof img === "string" ? img : URL.createObjectURL(img)}
-                    alt={`Preview ${idx + 1}`}
-                    className="h-24 object-cover rounded-xl border border-blue-800/30 shadow"
-                  />
-                ))}
+            <label className="col-span-2 text-blue-200 font-medium">Car Images <span className="text-xs text-blue-400">(Add images one by one in your preferred order)</span></label>
+            <div className="col-span-2 flex flex-col gap-2">
+              <div className="flex gap-2 items-center">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={e => setImageInput(e.target.files[0])}
+                  className="bg-gray-900/60 text-white rounded-xl p-2"
+                />
+                <Button
+                  type="button"
+                  className="bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition-all duration-300"
+                  onClick={() => {
+                    if (imageInput) {
+                      setForm(prev => ({ ...prev, images: [...prev.images, imageInput] }));
+                      setImageInput(null);
+                    }
+                  }}
+                  disabled={!imageInput}
+                >
+                  Add Image
+                </Button>
               </div>
-            )}
+              <span className="text-xs text-blue-400 mb-2">Add images one by one. You can remove or reorder before submitting.</span>
+              {/* Preview selected images with remove option */}
+              {form.images && form.images.length > 0 && (
+                <div className="flex gap-2 flex-wrap">
+                  {form.images.map((img, idx) => (
+                    <div key={idx} className="relative group">
+                      <img
+                        src={typeof img === "string" ? img : URL.createObjectURL(img)}
+                        alt={`Preview ${idx + 1}`}
+                        className="h-24 object-cover rounded-xl border border-blue-800/30 shadow"
+                      />
+                      <Button
+                        type="button"
+                        className="absolute top-1 right-1 bg-red-600 text-white rounded-full px-2 py-0.5 text-xs opacity-80 hover:opacity-100"
+                        onClick={() => setForm(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }))}
+                      >
+                        ✕
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
             <Button type="submit" className="col-span-2 bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition-all duration-300 hover:scale-105">
               {isEditing ? "Update Car" : "Add Car"}

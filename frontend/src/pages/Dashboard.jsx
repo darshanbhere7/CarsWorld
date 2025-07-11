@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Calendar, MapPin, Fuel, Settings, Car, Clock, X, CheckCircle, AlertCircle, Star, Edit } from 'lucide-react';
-import { Dialog } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import gsap from "gsap";
 
@@ -122,13 +122,7 @@ const Dashboard = () => {
     const statusConfig = getStatusConfig(booking.status);
     const isCancelling = cancellingId === booking._id;
 
-    // Animation ref for each card
-    const cardRef = useRef(null);
-    useEffect(() => {
-      if (!isMobile && cardRef.current) {
-        gsap.fromTo(cardRef.current, { opacity: 0, y: 40, scale: 0.98 }, { opacity: 1, y: 0, scale: 1, duration: 0.7, delay: 0.1 * index, ease: "power2.out" });
-      }
-    }, [index, isMobile]);
+    // Remove animation ref and gsap for a clean, modern look
 
     const openReviewForm = () => {
       setActiveReviewBookingId(booking._id);
@@ -159,159 +153,144 @@ const Dashboard = () => {
     };
 
     return (
-      <Card 
-        ref={cardRef}
-        className="group border-0 shadow-2xl bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 rounded-2xl hover:shadow-blue-900/40 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] focus-within:scale-[1.01] animate-fade-in"
-        style={{ animationDelay: `${index * 0.1}s` }}
-      >
-        <CardContent className="p-0">
-          <div className="flex flex-col lg:flex-row">
-            {/* Car Image Section */}
-            <div className="relative w-full lg:w-80 h-48 lg:h-auto overflow-hidden flex-shrink-0">
-              {booking.car?.images && booking.car.images.length > 0 ? (
-                <img
-                  src={booking.car.images[0]}
-                  alt={booking.car.name}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 rounded-t-2xl lg:rounded-l-2xl lg:rounded-tr-none"
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-blue-900/40 via-purple-900/40 to-gray-900/40 flex items-center justify-center rounded-t-2xl lg:rounded-l-2xl lg:rounded-tr-none">
-                  <div className="text-center">
-                    <Car className="w-12 h-12 text-blue-400 mx-auto mb-2" />
-                    <span className="text-sm text-blue-200">No Image</span>
-                  </div>
+      <Card className="border-0 shadow-2xl bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 rounded-2xl transition-all duration-300 w-full max-w-5xl mx-auto min-h-[200px] h-60 flex flex-row items-stretch overflow-hidden">
+        <CardContent className="p-0 flex flex-row w-full h-full">
+          {/* Car Image Section */}
+          <div className="relative w-64 min-w-[16rem] max-w-[18rem] aspect-[4/3] bg-gray-900 rounded-xl overflow-hidden flex items-center justify-center shadow-lg m-4">
+            {booking.car?.images && booking.car.images.length > 0 ? (
+              <img
+                src={booking.car.images[0]}
+                alt={booking.car.name}
+                className="object-cover w-full h-full rounded-xl"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-blue-900/40 via-purple-900/40 to-gray-900/40 flex items-center justify-center rounded-xl">
+                <div className="text-center">
+                  <Car className="w-12 h-12 text-blue-400 mx-auto mb-2" />
+                  <span className="text-sm text-blue-200">No Image</span>
                 </div>
-              )}
-              
-              {/* Status Badge Overlay */}
-              <div className="absolute top-3 right-3">
-                <Badge 
-                  variant={statusConfig.variant}
-                  className={`${statusConfig.className} flex items-center gap-1 shadow-sm`}
+              </div>
+            )}
+            {/* Status Badge Overlay */}
+            <span className={`absolute top-3 left-3 px-3 py-1 rounded-full flex items-center gap-1 shadow text-xs font-bold ${statusConfig.className}`}>
+              {statusConfig.icon} {booking.status}
+            </span>
+          </div>
+          {/* Content Section */}
+          <div className="flex-1 flex flex-col justify-center p-4 gap-2 md:gap-3">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+              {/* Only car name on the first line */}
+              <h3 className="text-2xl font-bold font-playfair tracking-wide text-white antialiased mb-1 md:mb-0">
+                {booking.car?.name || "Unknown Car"}
+              </h3>
+            </div>
+            {/* Badges row below car name */}
+            <div className="flex flex-wrap gap-2 mb-1">
+              <Badge className="bg-blue-700 text-white px-2 py-0.5 rounded-full font-inter text-xs font-medium">
+                {booking.car?.brand || "N/A"}
+              </Badge>
+              <Badge className="bg-green-600 text-white px-2 py-0.5 rounded-full font-inter text-xs font-medium">
+                {booking.car?.fuelType || "N/A"}
+              </Badge>
+              <Badge className="bg-blue-500 text-white px-2 py-0.5 rounded-full font-inter text-xs font-medium flex items-center gap-1">
+                <Settings className="w-4 h-4" /> {booking.car?.transmission || "N/A"}
+              </Badge>
+            </div>
+            <Separator className="my-1 bg-blue-900/40" />
+            {/* Details Grid: remove location */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-8">
+              <div className="flex flex-col gap-2 text-blue-200 text-sm font-inter">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-blue-400" />
+                  <span className="font-bold text-white">
+                    {formatDate(booking.pickupDate)} - {formatDate(booking.returnDate)}
+                  </span>
+                </div>
+              </div>
+              <div className="flex flex-col items-end md:items-center md:justify-center">
+                <span className="text-blue-200 text-sm">Total Price</span>
+                <span className="text-2xl font-bold text-green-400 font-inter">₹{booking.totalPrice}</span>
+              </div>
+            </div>
+            {/* Actions */}
+            {booking.status === "Booked" && (
+              <div className="pt-2 flex justify-end">
+                <Button
+                  onClick={() => handleCancel(booking._id)}
+                  variant="destructive"
+                  size="sm"
+                  disabled={isCancelling}
+                  className="hover:bg-red-700 transition-colors rounded-xl px-6 py-2 font-bold"
                 >
-                  {statusConfig.icon}
-                  {booking.status}
-                </Badge>
+                  {isCancelling ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Cancelling...
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <X className="w-4 h-4" />
+                      Cancel Booking
+                    </div>
+                  )}
+                </Button>
               </div>
-            </div>
-
-            {/* Content Section */}
-            <div className="flex-1 p-4 md:p-6 flex flex-col gap-2 md:gap-4">
-              <div className="space-y-2 md:space-y-4">
-                {/* Header */}
-                <div>
-                  <h3 className="text-lg md:text-xl font-bold font-playfair tracking-wide text-white mb-1 group-hover:text-blue-400 transition-colors antialiased">
-                    {booking.car?.name || "Unknown Car"}
-                  </h3>
-                  <p className="text-sm text-blue-200 flex items-center gap-2">
-                    <span className="font-medium text-white">{booking.car?.brand || "N/A"}</span>
-                    <span>•</span>
-                    <Fuel className="w-4 h-4 text-blue-400" />
-                    <span className="text-blue-100">{booking.car?.fuelType || "N/A"}</span>
-                    <span>•</span>
-                    <Settings className="w-4 h-4 text-blue-400" />
-                    <span className="text-blue-100">{booking.car?.transmission || "N/A"}</span>
-                  </p>
-                </div>
-                <Separator className="my-4 bg-blue-900/40" />
-                {/* Details Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm">
-                      <MapPin className="w-4 h-4 text-blue-400" />
-                      <span className="text-blue-200">Location:</span>
-                      <span className="font-medium text-white">{booking.car?.location || "N/A"}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="w-4 h-4 text-blue-400" />
-                      <span className="text-blue-200">Duration:</span>
-                      <span className="font-medium text-white">
-                        {formatDate(booking.pickupDate)} - {formatDate(booking.returnDate)}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="text-right md:text-left">
-                      <p className="text-sm text-blue-200">Total Price</p>
-                      <p className="text-2xl font-bold text-green-400">₹{booking.totalPrice}</p>
-                    </div>
-                  </div>
-                </div>
-                {/* Actions */}
-                {booking.status === "Booked" && (
-                  <div className="pt-4 flex justify-end">
-                    <Button
-                      onClick={() => handleCancel(booking._id)}
-                      variant="destructive"
-                      size="sm"
-                      disabled={isCancelling}
-                      className="hover:bg-red-700 transition-colors"
-                    >
-                      {isCancelling ? (
-                        <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          Cancelling...
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <X className="w-4 h-4" />
-                          Cancel Booking
-                        </div>
-                      )}
-                    </Button>
-                  </div>
-                )}
-                {booking.status === "Completed" && !reviewedBookings.includes(booking._id) && (
-                  <div className="pt-4 flex flex-col gap-2 items-end">
-                    {activeReviewBookingId !== booking._id ? (
-                      <Button
-                        onClick={openReviewForm}
-                        variant="outline"
-                        size="sm"
-                        className="border-blue-400 text-blue-400 hover:bg-blue-900/30"
-                      >
-                        <Edit className="w-4 h-4 mr-2" />
-                        Add Review
-                      </Button>
-                    ) : (
-                      <div className="w-full max-w-md bg-gradient-to-br from-blue-900/90 via-purple-900/90 to-gray-900/90 rounded-2xl p-6 shadow-2xl mt-2">
-                        <h3 className="text-lg font-bold font-playfair tracking-wide text-white mb-4 flex items-center"><Star className="w-5 h-5 text-yellow-400 mr-2" />Add Your Review</h3>
-                        <div className="mb-4">
-                          <label className="block text-blue-200 mb-2">Rating</label>
-                          <select
-                            className="w-full p-2 rounded bg-gray-800 text-white"
-                            value={reviewRating}
-                            onChange={e => setReviewRating(Number(e.target.value))}
-                          >
-                            {[5,4,3,2,1].map(r => <option key={r} value={r}>{r} Star{r>1?'s':''}</option>)}
-                          </select>
-                        </div>
-                        <div className="mb-4">
-                          <label className="block text-blue-200 mb-2">Comment</label>
-                          <Textarea
-                            value={reviewComment}
-                            onChange={e => setReviewComment(e.target.value)}
-                            placeholder="Share your experience with this car..."
-                            className="min-h-[100px] bg-gray-800 text-white"
-                          />
-                        </div>
-                        <div className="flex justify-end gap-2">
-                          <Button onClick={closeReviewForm} variant="outline">Cancel</Button>
-                          <Button onClick={handleReviewSubmit} disabled={reviewSubmitting} className="bg-blue-600 text-white">
-                            {reviewSubmitting ? 'Submitting...' : 'Submit Review'}
-                          </Button>
-                        </div>
+            )}
+            {booking.status === "Completed" && !reviewedBookings.includes(booking._id) && (
+              <>
+                <Button
+                  onClick={openReviewForm}
+                  variant="outline"
+                  size="sm"
+                  className="border-blue-400 text-blue-400 hover:bg-blue-900/30 mt-2"
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Add Review
+                </Button>
+                <Dialog open={activeReviewBookingId === booking._id} onOpenChange={val => { if (!val) closeReviewForm(); }}>
+                  <DialogContent className="max-w-lg w-full bg-gradient-to-br from-blue-900/90 via-purple-900/90 to-gray-900/90 p-0">
+                    <DialogHeader className="p-6 pb-2">
+                      <DialogTitle className="flex items-center gap-2 text-lg font-bold font-playfair tracking-wide text-white">
+                        <Star className="w-5 h-5 text-yellow-400" /> Add Your Review
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="p-6 pt-2 flex flex-col gap-4">
+                      <div>
+                        <label className="block text-blue-200 mb-2">Rating</label>
+                        <select
+                          className="w-full p-2 rounded bg-gray-800 text-white"
+                          value={reviewRating}
+                          onChange={e => setReviewRating(Number(e.target.value))}
+                        >
+                          {[5,4,3,2,1].map(r => <option key={r} value={r}>{r} Star{r>1?'s':''}</option>)}
+                        </select>
                       </div>
-                    )}
-                  </div>
-                )}
-                {booking.status === "Completed" && reviewedBookings.includes(booking._id) && (
-                  <div className="pt-4 flex justify-end">
-                    <Badge className="bg-green-700 text-white">Reviewed</Badge>
-                  </div>
-                )}
+                      <div>
+                        <label className="block text-blue-200 mb-2">Comment</label>
+                        <Textarea
+                          value={reviewComment}
+                          onChange={e => setReviewComment(e.target.value)}
+                          placeholder="Share your experience with this car..."
+                          className="min-h-[100px] bg-gray-800 text-white"
+                        />
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button onClick={closeReviewForm} variant="outline">Cancel</Button>
+                        <Button onClick={async () => { await handleReviewSubmit(); closeReviewForm(); }} disabled={reviewSubmitting} className="bg-blue-600 text-white">
+                          {reviewSubmitting ? 'Submitting...' : 'Submit Review'}
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </>
+            )}
+            {booking.status === "Completed" && reviewedBookings.includes(booking._id) && (
+              <div className="pt-2 flex justify-end">
+                <Badge className="bg-green-700 text-white">Reviewed</Badge>
               </div>
-            </div>
+            )}
           </div>
         </CardContent>
       </Card>

@@ -11,6 +11,12 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Pagination, EffectFade } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
+import 'swiper/css/effect-fade';
 
 const Cars = () => {
   const [cars, setCars] = useState([]);
@@ -185,81 +191,115 @@ const Cars = () => {
           </p>
         </div>
         {/* Filters Section */}
-        <Card className="mb-6 md:mb-8 border-0 bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 backdrop-blur-xl rounded-2xl shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] ring-1 ring-blue-800/40">
-          <CardContent className="p-4 md:p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Filter className="w-6 h-6 text-blue-400 animate-fade-in" />
-              <h3 className="text-lg md:text-xl font-bold font-playfair tracking-wide text-white antialiased">Filters</h3>
+        <Card className="mb-6 md:mb-8 border-0 bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-purple-900/90 backdrop-blur-xl rounded-3xl shadow-2xl ring-2 ring-blue-800/40">
+          <CardContent className="py-6 px-4 md:px-10">
+            <div className="flex items-center gap-3 mb-6">
+              <Filter className="w-8 h-8 text-blue-400 animate-fade-in drop-shadow-lg" />
+              <h3 className="text-2xl md:text-3xl font-bold font-playfair tracking-wide text-white antialiased drop-shadow-lg">Filters</h3>
             </div>
-            <div className="flex flex-col md:flex-row flex-wrap gap-4 md:gap-6 items-stretch md:items-center">
-              {/* Search Input */}
-              <div className="relative flex-1 min-w-[180px]">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-400 w-4 h-4 pointer-events-none" />
-                <Input
-                  className="pl-10 bg-gradient-to-r from-blue-950/60 via-purple-950/60 to-gray-900/60 text-white placeholder:text-blue-300 border border-blue-800/60 shadow-md rounded-lg focus:ring-2 focus:ring-blue-500/60 focus:border-blue-400 transition-all duration-200 text-base md:text-lg py-2 md:py-2.5"
-                  placeholder="Search cars..."
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  aria-label="Search cars"
-                />
+            {/* Line 1: All controls in a single row */}
+            <div className="flex flex-wrap md:flex-nowrap items-end gap-3 md:gap-4 lg:gap-6 w-full mb-3">
+              <div className="flex flex-col flex-1 min-w-[180px] max-w-xs">
+                <label className="mb-1 text-blue-300 font-semibold text-xs md:text-sm flex items-center gap-1"><span>🔍</span>Search</label>
+                <div className="relative w-full">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-400 w-5 h-5 pointer-events-none" />
+                  <Input
+                    className="pl-12 pr-4 bg-gradient-to-r from-blue-950/70 via-purple-950/70 to-gray-900/70 text-white placeholder:text-blue-300 border border-blue-800/60 shadow-lg rounded-full focus:ring-2 focus:ring-blue-500/60 focus:border-blue-400 transition-all duration-200 text-base md:text-lg h-12 w-full"
+                    placeholder="Search cars..."
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    aria-label="Search cars"
+                  />
+                </div>
               </div>
               {/* Brand Filter */}
-              <Select value={brand} onValueChange={setBrand} aria-label="Brand">
-                <SelectTrigger className="min-w-[140px] bg-gradient-to-r from-blue-950/60 via-purple-950/60 to-gray-900/60 text-white border border-blue-800/60 shadow-md rounded-lg focus:ring-2 focus:ring-blue-500/60 focus:border-blue-400 text-base md:text-lg py-2 md:py-2.5">
-                  <SelectValue placeholder="Brand" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all-brands">All Brands</SelectItem>
-                  {uniqueBrands.map((b) => (
-                    <SelectItem key={b} value={b}>{b}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex flex-col min-w-[120px]">
+                <label className="mb-1 text-blue-300 font-semibold text-xs md:text-sm flex items-center gap-1"><span>🚗</span>Brand</label>
+                <Select value={brand} onValueChange={setBrand} aria-label="Brand">
+                  <SelectTrigger className="bg-gradient-to-r from-blue-950/70 via-purple-950/70 to-gray-900/70 text-white border border-blue-800/60 shadow-lg rounded-full focus:ring-2 focus:ring-blue-500/60 focus:border-blue-400 text-base md:text-lg h-12 px-6">
+                    <SelectValue placeholder="All" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-blue-950/90 text-white rounded-xl shadow-xl border border-blue-800/60">
+                    <SelectItem value="all-brands">All</SelectItem>
+                    {uniqueBrands.map((b) => (
+                      <SelectItem key={b} value={b}>{b}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               {/* Location Filter */}
-              <Select value={location} onValueChange={setLocation} aria-label="Location">
-                <SelectTrigger className="min-w-[140px] bg-gradient-to-r from-blue-950/60 via-purple-950/60 to-gray-900/60 text-white border border-blue-800/60 shadow-md rounded-lg focus:ring-2 focus:ring-blue-500/60 focus:border-blue-400 text-base md:text-lg py-2 md:py-2.5">
-                  <SelectValue placeholder="Location" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all-locations">All Locations</SelectItem>
-                  {uniqueLocations.map((l) => (
-                    <SelectItem key={l} value={l}>{l}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex flex-col min-w-[120px]">
+                <label className="mb-1 text-blue-300 font-semibold text-xs md:text-sm flex items-center gap-1"><span>📍</span>Location</label>
+                <Select value={location} onValueChange={setLocation} aria-label="Location">
+                  <SelectTrigger className="bg-gradient-to-r from-blue-950/70 via-purple-950/70 to-gray-900/70 text-white border border-blue-800/60 shadow-lg rounded-full focus:ring-2 focus:ring-blue-500/60 focus:border-blue-400 text-base md:text-lg h-12 px-6">
+                    <SelectValue placeholder="All" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-blue-950/90 text-white rounded-xl shadow-xl border border-blue-800/60">
+                    <SelectItem value="all-locations">All</SelectItem>
+                    {uniqueLocations.map((l) => (
+                      <SelectItem key={l} value={l}>{l}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               {/* Fuel Type Filter */}
-              <Select value={fuelType} onValueChange={setFuelType} aria-label="Fuel type">
-                <SelectTrigger className="min-w-[140px] bg-gradient-to-r from-blue-950/60 via-purple-950/60 to-gray-900/60 text-white border border-blue-800/60 shadow-md rounded-lg focus:ring-2 focus:ring-blue-500/60 focus:border-blue-400 text-base md:text-lg py-2 md:py-2.5">
-                  <SelectValue placeholder="Fuel Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all-fuel-types">All Fuel Types</SelectItem>
-                  {uniqueFuelTypes.map((f) => (
-                    <SelectItem key={f} value={f}>{f}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex flex-col min-w-[120px]">
+                <label className="mb-1 text-blue-300 font-semibold text-xs md:text-sm flex items-center gap-1"><span>⛽</span>Fuel</label>
+                <Select value={fuelType} onValueChange={setFuelType} aria-label="Fuel type">
+                  <SelectTrigger className="bg-gradient-to-r from-blue-950/70 via-purple-950/70 to-gray-900/70 text-white border border-blue-800/60 shadow-lg rounded-full focus:ring-2 focus:ring-blue-500/60 focus:border-blue-400 text-base md:text-lg h-12 px-6">
+                    <SelectValue placeholder="All" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-blue-950/90 text-white rounded-xl shadow-xl border border-blue-800/60">
+                    <SelectItem value="all-fuel-types">All</SelectItem>
+                    {uniqueFuelTypes.map((f) => (
+                      <SelectItem key={f} value={f}>{f}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               {/* Transmission Filter */}
-              <Select value={transmission} onValueChange={setTransmission} aria-label="Transmission">
-                <SelectTrigger className="min-w-[140px] bg-gradient-to-r from-blue-950/60 via-purple-950/60 to-gray-900/60 text-white border border-blue-800/60 shadow-md rounded-lg focus:ring-2 focus:ring-blue-500/60 focus:border-blue-400 text-base md:text-lg py-2 md:py-2.5">
-                  <SelectValue placeholder="Transmission" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all-transmissions">All Transmissions</SelectItem>
-                  {uniqueTransmissions.map((t) => (
-                    <SelectItem key={t} value={t}>{t}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {/* Availability Only Checkbox */}
-              <div className="flex items-center gap-2">
-                <Checkbox id="availability" checked={availabilityOnly} onCheckedChange={setAvailabilityOnly} aria-label="Available only" />
-                <label htmlFor="availability" className="text-blue-200 text-base md:text-lg cursor-pointer select-none">Available only</label>
+              <div className="flex flex-col min-w-[120px]">
+                <label className="mb-1 text-blue-300 font-semibold text-xs md:text-sm flex items-center gap-1"><span>⚙️</span>Transmission</label>
+                <Select value={transmission} onValueChange={setTransmission} aria-label="Transmission">
+                  <SelectTrigger className="bg-gradient-to-r from-blue-950/70 via-purple-950/70 to-gray-900/70 text-white border border-blue-800/60 shadow-lg rounded-full focus:ring-2 focus:ring-blue-500/60 focus:border-blue-400 text-base md:text-lg h-12 px-6">
+                    <SelectValue placeholder="All" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-blue-950/90 text-white rounded-xl shadow-xl border border-blue-800/60">
+                    <SelectItem value="all-transmissions">All</SelectItem>
+                    {uniqueTransmissions.map((t) => (
+                      <SelectItem key={t} value={t}>{t}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {/* Sort By Filter */}
+              <div className="flex flex-col min-w-[140px]">
+                <label className="mb-1 text-blue-300 font-semibold text-xs md:text-sm flex items-center gap-1"><span>🔽</span>Sort By</label>
+                <Select value={sortOption} onValueChange={setSortOption} aria-label="Sort By">
+                  <SelectTrigger className="bg-white/10 text-blue-200 border border-blue-700/40 shadow-md rounded-full focus:ring-2 focus:ring-blue-400 text-base md:text-lg h-12 px-6 flex items-center">
+                    <SelectValue placeholder="Default" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-blue-950/90 text-white rounded-xl shadow-xl border border-blue-800/60">
+                    <SelectItem value="default">Default</SelectItem>
+                    <SelectItem value="priceLow">Price: Low to High</SelectItem>
+                    <SelectItem value="priceHigh">Price: High to Low</SelectItem>
+                    <SelectItem value="newest">Newest</SelectItem>
+                    <SelectItem value="highestRated">Highest Rated</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               {/* Reset Button */}
-              <Button onClick={resetFilters} variant="outline" className="text-blue-400 border-blue-700/60 hover:bg-blue-900/40 text-base md:text-lg px-4 py-2 rounded-lg flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-blue-400">
-                <RotateCcw className="w-4 h-4" /> Reset
-              </Button>
+              <div className="flex flex-col min-w-[100px]">
+                <label className="mb-1 text-blue-300 font-semibold text-xs md:text-sm flex items-center gap-1 invisible">Reset</label>
+                <Button onClick={resetFilters} variant="outline" className="bg-white/10 text-blue-200 border border-blue-700/40 shadow-md hover:bg-blue-900/40 hover:text-white text-base md:text-lg h-12 px-8 rounded-full flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200">
+                  <RotateCcw className="w-5 h-5" /> Reset
+                </Button>
+              </div>
+            </div>
+            {/* Line 2: Only Available Only checkbox */}
+            <div className="flex items-center mt-2">
+              <Checkbox id="availability" checked={availabilityOnly} onCheckedChange={setAvailabilityOnly} aria-label="Available only" className="border-blue-500 bg-blue-950/70 rounded-full focus:ring-2 focus:ring-blue-400 w-5 h-5" />
+              <label htmlFor="availability" className="text-blue-200 text-base md:text-lg cursor-pointer select-none font-inter ml-2">Available Only</label>
             </div>
           </CardContent>
         </Card>
@@ -282,12 +322,37 @@ const Cars = () => {
                 <CardContent className="p-0">
                   <div className="relative overflow-hidden">
                     <Link to={`/cars/${car._id}`} tabIndex={0} aria-label={`View details for ${car.name}`}> {/* Make image clickable */}
-                      <img
-                        src={car.images && car.images.length > 0 ? car.images[0] : ''}
-                        alt={car.name}
-                        className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-700 rounded-t-2xl"
-                        loading="lazy"
-                      />
+                      {car.images && car.images.length > 1 ? (
+                        <Swiper
+                          spaceBetween={0}
+                          slidesPerView={1}
+                          loop={true}
+                          pagination={{ clickable: true, dynamicBullets: true }}
+                          navigation={true}
+                          effect="fade"
+                          modules={[Navigation, Pagination, EffectFade]}
+                          className="w-full h-64 rounded-t-2xl" // 4:3 aspect ratio
+                        >
+                          {car.images.map((img, idx) => (
+                            <SwiperSlide key={idx}>
+                              <img
+                                src={img}
+                                alt={`${car.name} image ${idx + 1}`}
+                                className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-700 rounded-t-2xl"
+                                loading="lazy"
+                              />
+                            </SwiperSlide>
+                          ))}
+                        </Swiper>
+                      ) : (
+                        <img
+                          src={car.images && car.images.length > 0 ? car.images[0] : ''}
+                          alt={car.name}
+                          className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-700 rounded-t-2xl"
+                          loading="lazy"
+                        />
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-t-2xl" />
                     </Link>
                     <div className="absolute top-4 right-4 z-10">
                       <Button
