@@ -259,30 +259,33 @@ const CarDetail = () => {
 
   if (car.availability === false) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-100 p-6">
-        <div className="max-w-2xl mx-auto">
-          <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm transition-all duration-300 hover:scale-[1.025] hover:bg-gradient-to-br hover:from-red-700/80 hover:via-pink-800/80 hover:to-indigo-900/80 hover:shadow-2xl">
-            <CardContent className="p-8">
-              <div className="text-center space-y-6">
-                <div className="relative overflow-hidden rounded-2xl">
+      <div className="min-h-screen bg-gradient-to-br from-blue-950 via-purple-950 to-gray-900 flex items-center justify-center p-4">
+        <div className="max-w-xl w-full mx-auto">
+          <Card className="bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 border-0 shadow-2xl rounded-3xl">
+            <CardContent className="p-0">
+              <div className="flex flex-col items-center gap-6 py-8 px-4 md:px-10">
+                <div className="relative w-full rounded-2xl overflow-hidden shadow-lg">
                   <img 
                     src={car.images && car.images.length > 0 ? car.images[0] : ''} 
                     alt={car.name} 
-                    className="w-full h-64 object-cover transform hover:scale-105 transition-transform duration-500" 
+                    className="w-full h-64 object-cover rounded-2xl border-4 border-blue-900" 
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent rounded-2xl" />
                 </div>
-                
-                <div className="space-y-4">
-                  <h2 className="text-3xl font-bold font-playfair tracking-wide text-white antialiased">{car.name}</h2>
-                  <div className="flex items-center justify-center space-x-2 text-red-600">
-                    <AlertCircle className="w-5 h-5" />
-                    <span className="font-semibold text-lg">Currently Unavailable</span>
-                  </div>
-                  <p className="text-gray-600 max-w-md mx-auto">
-                    This car is currently unavailable for booking. Please check back later or browse other cars.
-                  </p>
+                <h2 className="text-3xl md:text-4xl font-bold font-playfair tracking-wide text-white antialiased text-center drop-shadow-lg">{car.name}</h2>
+                <div className="flex items-center gap-2 text-red-400 justify-center">
+                  <AlertCircle className="w-6 h-6" />
+                  <span className="font-bold text-lg md:text-xl font-inter">Currently Unavailable</span>
                 </div>
+                <p className="text-blue-200 text-base md:text-lg font-inter text-center max-w-md">
+                  This car is currently unavailable for booking. Please check back later or browse other cars.
+                </p>
+                <Button
+                  className="mt-2 bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-800 hover:to-purple-800 text-white font-bold font-inter border-none shadow-lg hover:shadow-blue-500/25 transition-all duration-300 transform hover:scale-105 px-8 py-3 text-base md:text-lg focus:outline-none focus:ring-2 focus:ring-blue-400 rounded-full"
+                  onClick={() => navigate('/cars')}
+                >
+                  Return to Cars
+                </Button>
               </div>
             </CardContent>
           </Card>
