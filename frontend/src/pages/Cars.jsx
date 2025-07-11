@@ -41,10 +41,8 @@ const Cars = () => {
     const fetchCars = async () => {
       try {
         const res = await api.get("/cars");
-        // Only show available cars
-        const availableCars = res.data.filter(car => car.availability !== false);
-        setCars(availableCars);
-        setFilteredCars(availableCars);
+        setCars(res.data);
+        setFilteredCars(res.data);
       } catch (err) {
         toast.error("Failed to load cars.");
       }
@@ -80,10 +78,12 @@ const Cars = () => {
     fetchCars();
     fetchRatings();
 
-    // Listen for real-time car updates
+    // Listen for real-time car and review updates
     socket.on("car_updated", fetchCars);
+    socket.on("review_updated", fetchRatings);
     return () => {
       socket.off("car_updated", fetchCars);
+      socket.off("review_updated", fetchRatings);
     };
   }, []);
 
@@ -318,7 +318,7 @@ const Cars = () => {
             </div>
           ) : (
             currentCars.map((car) => (
-              <Card key={car._id} className="group hover:shadow-2xl transition-all duration-500 border-0 shadow-2xl overflow-hidden bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 backdrop-blur-md rounded-2xl hover:scale-105 hover:bg-gradient-to-tr hover:from-blue-800 hover:to-purple-800">
+              <Card key={car._id} className="group hover:shadow-2xl transition-all duration-500 border-0 shadow-2xl overflow-hidden bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-gray-900/80 backdrop-blur-md rounded-2xl hover:scale-105 hover:bg-gradient-to-tr hover:from-blue-800 hover:to-purple-800 opacity-100">
                 <CardContent className="p-0">
                   <div className="relative overflow-hidden">
                     <Link to={`/cars/${car._id}`} tabIndex={0} aria-label={`View details for ${car.name}`}> {/* Make image clickable */}
@@ -366,7 +366,7 @@ const Cars = () => {
                       </Button>
                     </div>
                     <div className="absolute bottom-4 left-4">
-                      <Badge className="bg-green-500 text-white backdrop-blur-sm animate-pulse shadow-md">
+                      <Badge className={`backdrop-blur-sm animate-pulse shadow-md ${car.availability ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
                         {car.availability ? 'Available' : 'Unavailable'}
                       </Badge>
                     </div>
@@ -407,8 +407,8 @@ const Cars = () => {
                       </span>
                       <span className="text-blue-300 text-xs">({ratingsMap[car._id]?.count || 0} reviews)</span>
                     </div>
-                    <Button asChild className="w-full group/btn bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-800 hover:to-purple-800 text-white shadow-lg transition-all duration-300 mt-2">
-                      <Link to={`/cars/${car._id}`}>
+                    <Button asChild className="w-full group/btn bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-800 hover:to-purple-800 text-white shadow-lg transition-all duration-300 mt-2" disabled={!car.availability}>
+                      <Link to={`/cars/${car._id}`} tabIndex={car.availability ? 0 : -1} aria-disabled={!car.availability} style={!car.availability ? { pointerEvents: 'none', opacity: 0.6 } : {}}>
                         View Details
                       </Link>
                     </Button>

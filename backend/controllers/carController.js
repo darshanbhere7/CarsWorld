@@ -57,12 +57,7 @@ const addCar = async (req, res) => {
 // Get all cars
 const getAllCars = async (req, res) => {
   try {
-    let cars;
-    if (req.user && req.user.role === "admin") {
-      cars = await Car.find();
-    } else {
-      cars = await Car.find({ availability: true });
-    }
+    const cars = await Car.find();
     res.status(200).json(cars);
   } catch (err) {
     res.status(500).json({ error: err.message });
