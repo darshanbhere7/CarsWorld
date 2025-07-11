@@ -9,10 +9,12 @@ const imagekit = new ImageKit({
   authenticationEndpoint: "", // leave empty
 });
 
+const API_URL = import.meta.env.VITE_API_URL || "https://carsworld-backend.onrender.com";
+
 export const uploadToImageKit = async (file) => {
   try {
     // 1. Get authentication parameters from backend
-    const authRes = await axios.get("http://localhost:5000/api/imagekit/auth");
+    const authRes = await axios.get(`${API_URL}/api/imagekit/auth`);
     const { token, signature, expire } = authRes.data;
 
     // 2. Use those parameters to upload image
