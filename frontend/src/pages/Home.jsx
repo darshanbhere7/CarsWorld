@@ -58,7 +58,7 @@ const testimonials = [
   {
     name: "Rahul Desai",
     role: "Software Engineer",
-    text: "I loved the seamless experience. The mobile app is intuitive and booking takes just 30 seconds!",
+    text: "I loved the seamless experience. The webapp is intuitive and booking takes just 30 seconds!",
     rating: 5,
     image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face"
   },
