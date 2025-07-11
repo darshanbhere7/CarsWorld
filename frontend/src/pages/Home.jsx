@@ -321,7 +321,7 @@ const Home = () => {
         ))}
       </div>
       {/* Hero Section with 3D Car */}
-      <section className="relative min-h-[70vh] flex flex-col md:flex-row items-center md:items-stretch justify-center overflow-hidden pt-0 mt-0 gap-4" style={{zIndex: 2, paddingTop: '3.5rem'}}>
+      <section className="relative min-h-[70vh] flex flex-col md:flex-row items-center md:items-stretch justify-center overflow-hidden pt-0 mt-0 gap-4" style={{zIndex: 2, paddingTop: '2.5rem'}}>
         {/* Hero Content (left on desktop) */}
         <div className="relative z-20 w-full md:w-1/2 max-w-2xl mx-auto px-4 md:ml-16 flex flex-col items-start justify-center gap-6 animate-fade-in-up text-left">
           <Badge className="mb-2 bg-gradient-to-r from-blue-700 to-purple-700 text-white border-none shadow-lg px-4 py-2 text-base font-medium">
