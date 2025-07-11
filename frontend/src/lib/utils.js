@@ -6,4 +6,5 @@ export function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
-export const socket = io("http://localhost:5000"); // Adjust URL for production
+const SOCKET_URL = import.meta.env.VITE_API_URL || "https://carsworld-backend.onrender.com";
+export const socket = io(SOCKET_URL);
