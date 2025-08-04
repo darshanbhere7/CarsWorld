@@ -239,9 +239,6 @@ Contributions make the open-source community an amazing place to learn, inspire,
 
 This project is distributed under the MIT License. See LICENSE for more information.
 
-## 📞 Contact
-
-[Your Name] - [Your Portfolio Link] - [Your Email Address]
 
 Project Link: https://github.com/darshanbhere7/CarsWorld
 
